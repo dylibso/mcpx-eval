@@ -1,0 +1,20 @@
+[project]
+name = "mcpx-eval"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "mcpx-py>=0.1.1",
+    "mcpx-pydantic-ai",
+]
+
+[tool.uv.sources]
+mcpx-pydantic-ai = { git = "https://github.com/dylibso/mcpx-pydantic-ai" }
+
+[dependency-groups]
+dev = [
+    "python-lsp-ruff>=2.2.2",
+    "python-lsp-server>=1.12.2",
+    "ruff>=0.9.6",
+]
