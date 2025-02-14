@@ -50,17 +50,27 @@ async def run():
     tests = [Test.load(t) for t in args.tests]
 
     if len(args.model) > 0:
-        tests.append(Test("command-line", args.prompt, args.check, args.model))
+        tests.append(
+            Test(
+                "command-line",
+                args.prompt,
+                args.check,
+                args.model,
+                max_tool_calls=args.max_tool_calls,
+            )
+        )
 
     for test in tests:
         logger.info(f"Running {test.name}: {', '.join(test.models)}")
         judge = Judge(models=test.models)
         res = await judge.run_test(test)
+        logger.info(f"{test.name} finished in {res.duration}")
         for result in res.scores:
             print()
             print(result.model)
             print("=" * len(result.model))
             print()
+            print(f"Time: {result.duration}s")
             print("Output:")
             print(result.output)
             print()

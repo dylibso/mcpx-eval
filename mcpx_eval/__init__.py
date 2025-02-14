@@ -1,7 +1,10 @@
 import json
 import tomllib
 import os
+import copy
 import logging
+from dataclasses import dataclass
+from datetime import datetime, timedelta
 from typing import List
 
 from mcpx_pydantic_ai import BaseModel, Agent, Field
@@ -16,7 +19,10 @@ class Score(BaseModel):
     """
 
     model: str = Field("Name of model being scored")
-    output: str = Field("Resulting output of the prompt")
+    duration: float = Field("Total time of call in seconds")
+    output: str = Field(
+        "Resulting output of the prompt, taken from the 'content' field of the final message"
+    )
     description: str = Field("Description of results for this model")
     accuracy: float = Field("A score of how accurate the response is")
     tool_use: float = Field("A score of how appropriate the tool use is")
@@ -26,8 +32,9 @@ class Score(BaseModel):
     )
 
 
-class Scores(BaseModel):
+class Results(BaseModel):
     scores: List[Score] = Field("A list of scores for each model")
+    duration: float = Field("Total duration of all tests")
 
 
 SYSTEM_PROMPT = """
@@ -44,51 +51,65 @@ accuracy, tool use and overall quality of the output.
 """
 
 
-class Judge:
-    def __init__(self, models: List[str] | None = None):
-        if models is None:
-            models = []
-        self.agent = Agent(
-            "claude-3-5-sonnet-latest", result_type=Scores, system_prompt=SYSTEM_PROMPT
-        )
-        self.models = models
+@dataclass
+class Model:
+    name: str
+    config: ChatConfig
 
-    async def run_test(self, test: "Test") -> Scores:
+
+class Judge:
+    agent: Agent
+    models: List[Model]
+
+    def __init__(self, models: List[Model | str] | None = None):
+        self.agent = Agent(
+            "claude-3-5-sonnet-latest", result_type=Results, system_prompt=SYSTEM_PROMPT
+        )
+        self.models = []
+        if models is not None:
+            for model in models:
+                self.add_model(model)
+
+    def add_model(self, model: Model | str):
+        if isinstance(model, str):
+            model = Model(name=model, config=ChatConfig())
+        self.models.append(model)
+
+    async def run_test(self, test: "Test") -> Results:
         return await self.run(
             test.prompt, test.check, max_tool_calls=test.max_tool_calls
         )
 
-    async def run(self, prompt, check, max_tool_calls: int | None = None) -> Scores:
+    async def run(
+        self,
+        prompt,
+        check,
+        max_tool_calls: int | None = None,
+    ) -> Results:
         m = []
-
+        t = timedelta(seconds=0)
+        model_cache = {}
         for model in self.models:
-            logger.info(f"Evaluating model {model}")
-            if "claude" in model:
-                chat = Claude(
-                    ChatConfig(
-                        model=model,
-                    )
-                )
-            elif (
-                model in ["gpt-4o", "o1", "o1-mini", "o3-mini", "o3"]
-                or "gpt-3.5" in model
-                or "gpt-4" in model
-            ):
-                chat = OpenAI(
-                    ChatConfig(
-                        model=model,
-                    )
-                )
-            elif "gemini" in model:
-                chat = Gemini(ChatConfig(model=model))
+            logger.info(f"Evaluating model {model.name}")
+            if model.name in model_cache:
+                chat = model_cache[model.name]
             else:
-                chat = Ollama(
-                    ChatConfig(
-                        model=model,
-                    )
-                )
+                if "claude" in model.name:
+                    chat = Claude(model.config)
+                elif (
+                    model.name in ["gpt-4o", "o1", "o1-mini", "o3-mini", "o3"]
+                    or "gpt-3.5" in model.name
+                    or "gpt-4" in model.name
+                ):
+                    chat = OpenAI(model.config)
+                elif "gemini" in model.name:
+                    chat = Gemini(model.config)
+                else:
+                    chat = Ollama(model.config)
+                model_cache[model.name] = chat
             chat.get_tools()
-            result = {"model": model, "messages": []}
+            start = datetime.now()
+            result = {"model": model.name, "messages": []}
             tool_calls = 0
             try:
                 async for response in chat.chat(prompt):
@@ -128,6 +149,9 @@ class Judge:
                         "tool": None,
                     }
                 )
+            tt = datetime.now() - start
+            t += tt
+            result["duration"] = f"{t.total_seconds()}s"
             m.append(result)
 
         data = json.dumps(m)
