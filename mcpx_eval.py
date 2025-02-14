@@ -1,8 +1,53 @@
 import json
+import tomllib
+import os
 from typing import List
 
 from mcpx_pydantic_ai import BaseModel, Agent, Field
-from mcpx_py import Ollama, ChatConfig
+from mcpx_py import Ollama, Claude, Gemini, OpenAI, ChatConfig
+
+
+class Test:
+    name: str
+    prompt: str
+    check: str
+    models: List[str]
+    max_tool_calls: int | None
+
+    def __init__(
+        self,
+        name: str,
+        prompt: str,
+        check: str,
+        models: List[str],
+        max_tool_calls: int | None = None,
+    ):
+        self.name = name
+        self.prompt = prompt
+        self.check = check
+        self.models = models
+        self.max_tool_calls = max_tool_calls
+
+    @staticmethod
+    def load(path) -> "Test":
+        with open(path) as f:
+            s = f.read()
+        data = tomllib.loads(s)
+        if "import" in data:
+            t = Test.load(os.path.join(os.path.dirname(path), data["import"]))
+            t.name = data.get("name", t.name)
+            t.prompt = data.get("prompt", t.prompt)
+            t.check = data.get("check", t.check)
+            t.models = data.get("models", t.models)
+            t.max_tool_calls = data.get("max-tool-calls", t.max_tool_calls)
+            return t
+        return Test(
+            data.get("name", path),
+            data["prompt"],
+            data["check"],
+            data["models"],
+            max_tool_calls=data.get("max-tool-calls"),
+        )
 
 
 class Score(BaseModel):
@@ -11,7 +56,7 @@ class Score(BaseModel):
     """
 
     model: str = Field("Name of model being scored")
-    output: str = Field("The literal output of the model being tested")
+    output: str = Field("The message content from the final message sent by the model")
     description: str = Field("Description of results for this model")
     accuracy: float = Field("A score of how accurate the response is")
     tool_use: float = Field("A score of how appropriate the tool use is")
@@ -45,47 +90,125 @@ class Judge:
         )
         self.models = models
 
-    async def run(self, prompt, test) -> Scores:
+    async def run(self, prompt, check, max_tool_calls: int | None = None) -> Scores:
         m = []
 
         for model in self.models:
-            chat = Ollama(
-                ChatConfig(
-                    model=model,
-                    system="Utilize tools when unable to determine a result on your own",
+            print(f"Evaluating model {model}")
+            if "claude" in model:
+                chat = Claude(
+                    ChatConfig(
+                        model=model,
+                    )
                 )
-            )
+            elif (
+                model in ["gpt-4o", "o1", "o1-mini", "o3-mini", "o3"]
+                or "gpt-3.5" in model
+                or "gpt-4" in model
+            ):
+                chat = OpenAI(
+                    ChatConfig(
+                        model=model,
+                    )
+                )
+            elif "gemini" in model:
+                chat = Gemini(ChatConfig(model=model))
+            else:
+                chat = Ollama(
+                    ChatConfig(
+                        model=model,
+                    )
+                )
             chat.get_tools()
             result = {"model": model, "messages": []}
-            async for response in chat.chat(prompt):
-                tool = None
-                if response.tool is not None:
-                    tool = {"name": response.tool.name, "input": response.tool.input}
+            tool_calls = 0
+            try:
+                async for response in chat.chat(prompt):
+                    tool = None
+                    if response.tool is not None:
+                        tool = {
+                            "name": response.tool.name,
+                            "input": response.tool.input,
+                        }
+                        if max_tool_calls is not None and tool_calls >= max_tool_calls:
+                            result["message"].append(
+                                {
+                                    "error": "Stopping, too many tool calls",
+                                    "role": "error",
+                                    "is_error": True,
+                                    "tool": tool,
+                                }
+                            )
+                            break
+                        tool_calls += 1
+                    result["messages"].append(
+                        {
+                            "content": response.content,
+                            "role": response.role,
+                            "is_error": response._error or False,
+                            "tool": tool,
+                        }
+                    )
+            except Exception as exc:
+                print(f"Error: {str(exc)}")
                 result["messages"].append(
                     {
-                        "content": response.content,
-                        "role": response.role,
-                        "is_error": response._error or False,
-                        "tool": tool,
+                        "error": str(exc),
+                        "role": "error",
+                        "is_error": True,
+                        "tool": None,
                     }
                 )
             m.append(result)
 
         data = json.dumps(m)
 
+        print("Analyzing results")
         res = await self.agent.run(
-            user_prompt=f"<direction>Analyze the following results for the prompt {prompt}. {test}</direction>\n{data}"
+            user_prompt=f"<direction>Analyze the following results for the prompt {prompt}. {check}</direction>\n{data}"
         )
         return res.data
 
 
 async def main():
-    judge = Judge(models=["llama3.2", "qwen2.5"])
-    res = await judge.run(
-        "how many images are there on google.com?",
-        "the fetch tool should be used to determine there is only one image on google,com",
+    from argparse import ArgumentParser
+
+    parser = ArgumentParser("mcpx-eval", description="LLM tool use evaluator")
+    parser.add_argument(
+        "--model",
+        "-m",
+        default=[],
+        help="Model to include in test",
+        action="append",
     )
-    print(res)
+    parser.add_argument("--prompt", help="Test prompt")
+    parser.add_argument("--check", help="Test check")
+    parser.add_argument("tests", help="Test files", nargs="*")
+
+    args = parser.parse_args()
+
+    tests = [Test.load(t) for t in args.tests]
+
+    if len(args.model) > 0:
+        tests.append(Test("command-line", args.prompt, args.check, args.model))
+
+    for test in tests:
+        print(f"Running {test.name}: {', '.join(test.models)}")
+        judge = Judge(models=test.models)
+        res = await judge.run(test.prompt, test.check)
+        for result in res.scores:
+            print()
+            print(result.model)
+            print("=" * len(result.model))
+            print()
+            print("Output:")
+            print(result.output)
+            print()
+            print("Score:")
+            print(result.description)
+            print("Accuracy:", result.accuracy)
+            print("Tool use:", result.tool_use)
+            print("Overall:", result.overall)
 
 
 if __name__ == "__main__":

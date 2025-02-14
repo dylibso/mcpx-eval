@@ -1,0 +1,4 @@
+name = "Remote"
+models = ["gpt-4o", "claude-3-5-sonnet-latest"]
+prompt = "how many images can be found on the google homepage?"
+check = "the fetch tool should be used to determine the number of images on google.com"

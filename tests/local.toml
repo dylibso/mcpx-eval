@@ -1,0 +1,3 @@
+import = "remote.toml"
+name = "Local"
+models = ["qwen2.5", "llama3.2"]
