@@ -79,6 +79,8 @@ class Judge:
                 ),
             )
         model.config.model = model.name
+        if model.config.client is None:
+            model.config.client = self.agent.client
         self.models.append(model)
 
     async def run_test(self, test: "Test") -> Results:
@@ -112,7 +114,6 @@ class Judge:
                     chat = Chat(Gemini(config=model.config))
                 else:
                     chat = Chat(Ollama(config=model.config))
-                chat.client.clear_cache()
                 model_cache[model.name] = chat
             start = datetime.now()
             result = {"model": model.name, "messages": []}

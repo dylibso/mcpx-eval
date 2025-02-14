@@ -468,15 +468,15 @@ wheels = [
 
 [[package]]
 name = "mcp-run"
-version = "0.1.0"
+version = "0.1.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "extism" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/06/0d/9d28b26105af35112b09bc611bb10258b5bee70ab210a248d2eb910654b5/mcp_run-0.1.0.tar.gz", hash = "sha256:5013a433cab30cd91b2e9b1e51243ec36bd82ba7f4b8d5370e54384c0c3b2de1", size = 14065 }
+sdist = { url = "https://files.pythonhosted.org/packages/06/33/fd91f684289eaaca9bfd6b2de2d55bf80c71ba018109f43173a49ed1716b/mcp_run-0.1.3.tar.gz", hash = "sha256:e4c2f6fd85a02989618fd9a28167c803f2dd7cc07fbe42003a98447ac96ef03d", size = 14133 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/67/3f/dc389d4d83ac530d16aec94d3ca3162bceeb1ce69fbf7739c9b173303587/mcp_run-0.1.0-py3-none-any.whl", hash = "sha256:a23c0dc53339d02cc3f0414bfcf21fa20f782cac8452ffce86fb2b273c9813cf", size = 15277 },
+    { url = "https://files.pythonhosted.org/packages/91/9c/b1958da0fe509343582020633ebdc2df58b9ed859a353c13f56734ec1a45/mcp_run-0.1.3-py3-none-any.whl", hash = "sha256:84f76134a163f9c2e223f641827117d1b0b9177603ea302092332cbf02f671b2", size = 15340 },
 ]
 
 [[package]]
@@ -497,7 +497,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "mcpx-py", specifier = ">=0.2.1" },
+    { name = "mcpx-py", git = "https://github.com/dylibso/mcpx-py" },
     { name = "mcpx-pydantic-ai", git = "https://github.com/dylibso/mcpx-pydantic-ai" },
 ]
 
@@ -510,8 +510,8 @@ dev = [
 
 [[package]]
 name = "mcpx-py"
-version = "0.2.1"
-source = { registry = "https://pypi.org/simple" }
+version = "0.2.4"
+source = { git = "https://github.com/dylibso/mcpx-py#7108dbf665dc4b6fa051a0fb0721d720ec4351d5" }
 dependencies = [
     { name = "anthropic" },
     { name = "mcp-run" },
@@ -520,15 +520,11 @@ dependencies = [
     { name = "psutil" },
     { name = "python-dotenv" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/84/32/14fbfab7cb8d8e0971239afd2616d58594698b2e19cd59ef19e2a2443d1a/mcpx_py-0.2.1.tar.gz", hash = "sha256:1c2344d0c1b4c3252528dd118c9ce7307d26d5db869d7781db46dfdf25c8d77b", size = 11446 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/50/63/0cc1d30a01b5f3d342239116ff37f3f77ac9c230521ed278a489e1310911/mcpx_py-0.2.1-py3-none-any.whl", hash = "sha256:ece6205c756d4135a5779caef68fe1430cbee329ac115e430ab64859578f76ed", size = 10846 },
-]
 
 [[package]]
 name = "mcpx-pydantic-ai"
 version = "0.1.0"
-source = { git = "https://github.com/dylibso/mcpx-pydantic-ai#f8fba3e46b6b444e701b0d8421dc72cac14e0ed3" }
+source = { git = "https://github.com/dylibso/mcpx-pydantic-ai#ce65086f9a6aa856698e9dca9986c44d5e22860e" }
 dependencies = [
     { name = "mcp-run" },
     { name = "pydantic" },
