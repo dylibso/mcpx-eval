@@ -121,7 +121,7 @@ class Judge:
                             "input": response.tool.input,
                         }
                         if max_tool_calls is not None and tool_calls >= max_tool_calls:
-                            result["message"].append(
+                            result["messages"].append(
                                 {
                                     "error": f"Stopping, {tool_calls} tool calls when the maximum is {max_tool_calls}",
                                     "role": "error",
