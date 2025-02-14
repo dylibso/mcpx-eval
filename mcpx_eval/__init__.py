@@ -1,3 +1,4 @@
+
 import json
 import tomllib
 import os
@@ -82,19 +83,20 @@ accuracy, tool use and overall quality of the output.
 
 
 class Judge:
-    def __init__(self, models: List[str] | None = None):
+    def __init__(self, models: List[str] | None = None, log=print):
         if models is None:
             models = []
         self.agent = Agent(
             "claude-3-5-sonnet-latest", result_type=Scores, system_prompt=SYSTEM_PROMPT
         )
         self.models = models
+        self.log = log
 
     async def run(self, prompt, check, max_tool_calls: int | None = None) -> Scores:
         m = []
 
         for model in self.models:
-            print(f"Evaluating model {model}")
+            self.log(f"Evaluating model {model}")
             if "claude" in model:
                 chat = Claude(
                     ChatConfig(
@@ -150,7 +152,7 @@ class Judge:
                         }
                     )
             except Exception as exc:
-                print(f"Error: {str(exc)}")
+                self.log(f"Error: {str(exc)}")
                 result["messages"].append(
                     {
                         "error": str(exc),
@@ -163,55 +165,10 @@ class Judge:
 
         data = json.dumps(m)
 
-        print("Analyzing results")
+        self.log("Analyzing results")
         res = await self.agent.run(
             user_prompt=f"<direction>Analyze the following results for the prompt {prompt}. {check}</direction>\n{data}"
         )
         return res.data
 
 
-async def main():
-    from argparse import ArgumentParser
-
-    parser = ArgumentParser("mcpx-eval", description="LLM tool use evaluator")
-    parser.add_argument(
-        "--model",
-        "-m",
-        default=[],
-        help="Model to include in test",
-        action="append",
-    )
-    parser.add_argument("--prompt", help="Test prompt")
-    parser.add_argument("--check", help="Test check")
-    parser.add_argument("tests", help="Test files", nargs="*")
-
-    args = parser.parse_args()
-
-    tests = [Test.load(t) for t in args.tests]
-
-    if len(args.model) > 0:
-        tests.append(Test("command-line", args.prompt, args.check, args.model))
-
-    for test in tests:
-        print(f"Running {test.name}: {', '.join(test.models)}")
-        judge = Judge(models=test.models)
-        res = await judge.run(test.prompt, test.check)
-        for result in res.scores:
-            print()
-            print(result.model)
-            print("=" * len(result.model))
-            print()
-            print("Output:")
-            print(result.output)
-            print()
-            print("Score:")
-            print(result.description)
-            print("Accuracy:", result.accuracy)
-            print("Tool use:", result.tool_use)
-            print("Overall:", result.overall)
-
-
-if __name__ == "__main__":
-    import asyncio
-
-    asyncio.run(main())

@@ -9,6 +9,9 @@ dependencies = [
     "mcpx-pydantic-ai",
 ]
 
+[tool.uv]
+package = true
+
 [tool.uv.sources]
 mcpx-pydantic-ai = { git = "https://github.com/dylibso/mcpx-pydantic-ai" }
 
@@ -18,3 +21,11 @@ dev = [
     "python-lsp-server>=1.12.2",
     "ruff>=0.9.6",
 ]
+
+[project.scripts]
+mcpx-eval = "mcpx_eval.__main__:main"
+
+# Workaround for uv/setuptools version mismatch
+# https://github.com/astral-sh/uv/issues/9513#issuecomment-2519527822
+[tool.setuptools]
+license-files = []
