@@ -1,7 +1,6 @@
 import json
 import tomllib
 import os
-import copy
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -48,6 +47,7 @@ accuracy, tool use and overall quality of the output.
   this score.
 - The accuracy score should reflect the accuracy of the result generally and taking into account the <direction> block
 - The overall score should reflect the overall quality of the output
+- Try to utilize the tools that are available instead of searching for new tools
 """
 
 
@@ -72,7 +72,13 @@ class Judge:
 
     def add_model(self, model: Model | str):
         if isinstance(model, str):
-            model = Model(name=model, config=ChatConfig())
+            model = Model(
+                name=model,
+                config=ChatConfig(
+                    model=model,
+                ),
+            )
+        model.config.model = model.name
         self.models.append(model)
 
     async def run_test(self, test: "Test") -> Results:
@@ -107,7 +113,7 @@ class Judge:
                 else:
                     chat = Ollama(model.config)
                 model_cache[model.name] = chat
-            chat.get_tools()
+                chat.get_tools()
             start = datetime.now()
             result = {"model": model.name, "messages": []}
             tool_calls = 0
