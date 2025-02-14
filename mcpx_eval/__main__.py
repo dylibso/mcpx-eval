@@ -1,4 +1,9 @@
 from . import Judge, Test
+import asyncio
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 async def run():
     from argparse import ArgumentParser
@@ -13,9 +18,34 @@ async def run():
     )
     parser.add_argument("--prompt", help="Test prompt")
     parser.add_argument("--check", help="Test check")
+    parser.add_argument(
+        "--max-tool-calls", default=None, help="Maximum number of tool calls", type=int
+    )
     parser.add_argument("tests", help="Test files", nargs="*")
+    parser.add_argument(
+        "--log",
+        default=None,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        help="Set the logging level.",
+    )
+    parser.add_argument(
+        "--verbose", default=False, action="store_true", help="Enable verbose logging"
+    )
 
     args = parser.parse_args()
+
+    level = args.log
+    if level is None:
+        level = "INFO"
+
+    log_level = getattr(logging, level, None)
+    if not isinstance(log_level, int):
+        raise ValueError("Invalid log level: %s" % level)
+    logging.basicConfig(level=log_level)
+
+    if not args.verbose:
+        for handler in logging.root.handlers:
+            handler.addFilter(logging.Filter("mcpx_eval"))
 
     tests = [Test.load(t) for t in args.tests]
 
@@ -23,9 +53,9 @@ async def run():
         tests.append(Test("command-line", args.prompt, args.check, args.model))
 
     for test in tests:
-        print(f"Running {test.name}: {', '.join(test.models)}")
+        logger.info(f"Running {test.name}: {', '.join(test.models)}")
         judge = Judge(models=test.models)
-        res = await judge.run(test.prompt, test.check)
+        res = await judge.run_test(test)
         for result in res.scores:
             print()
             print(result.model)
@@ -36,15 +66,15 @@ async def run():
             print()
             print("Score:")
             print(result.description)
+            print("Number of tool calls:", result.tool_calls)
             print("Accuracy:", result.accuracy)
             print("Tool use:", result.tool_use)
             print("Overall:", result.overall)
 
 
 def main():
-    import asyncio
-
     asyncio.run(run())
+
 
 if __name__ == "__main__":
     main()
