@@ -497,7 +497,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "mcpx-py", specifier = ">=0.1.1" },
+    { name = "mcpx-py", specifier = ">=0.2.1" },
     { name = "mcpx-pydantic-ai", git = "https://github.com/dylibso/mcpx-pydantic-ai" },
 ]
 

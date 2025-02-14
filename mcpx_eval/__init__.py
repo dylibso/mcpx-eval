@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from typing import List
 
 from mcpx_pydantic_ai import BaseModel, Agent, Field
-from mcpx_py import Ollama, Claude, Gemini, OpenAI, ChatConfig
+from mcpx_py import Ollama, Claude, Gemini, OpenAI, ChatConfig, Chat
 
 logger = logging.getLogger(__name__)
 
@@ -101,24 +101,24 @@ class Judge:
                 chat = model_cache[model.name]
             else:
                 if "claude" in model.name:
-                    chat = Claude(model.config)
+                    chat = Chat(Claude(config=model.config))
                 elif (
                     model.name in ["gpt-4o", "o1", "o1-mini", "o3-mini", "o3"]
                     or "gpt-3.5" in model.name
                     or "gpt-4" in model.name
                 ):
-                    chat = OpenAI(model.config)
+                    chat = Chat(OpenAI(config=model.config))
                 elif "gemini" in model.name:
-                    chat = Gemini(model.config)
+                    chat = Chat(Gemini(config=model.config))
                 else:
-                    chat = Ollama(model.config)
+                    chat = Chat(Ollama(config=model.config))
+                chat.client.clear_cache()
                 model_cache[model.name] = chat
-                chat.get_tools()
             start = datetime.now()
             result = {"model": model.name, "messages": []}
             tool_calls = 0
             try:
-                async for response in chat.chat(prompt):
+                async for response in chat.send_message(prompt):
                     tool = None
                     if response.tool is not None:
                         logger.info(f"Tool: {response.tool.name}")

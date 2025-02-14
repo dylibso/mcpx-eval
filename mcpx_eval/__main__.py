@@ -60,6 +60,7 @@ async def run():
             )
         )
 
+
     for test in tests:
         logger.info(f"Running {test.name}: {', '.join(test.models)}")
         judge = Judge(models=test.models)
