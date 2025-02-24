@@ -1,14 +1,39 @@
-from . import Judge, Test
+from . import Judge, Test, Database
 import asyncio
 import logging
 
 logger = logging.getLogger(__name__)
 
 
+def print_result(result):
+    print()
+    print(result.model)
+    print("=" * len(result.model))
+    print()
+    print(f"Time: {result.duration}s")
+    print("Output:")
+    print(result.llm_output)
+    print()
+    print("Score:")
+    print(result.description)
+    print("Number of tool calls:", result.tool_calls)
+    print("Accuracy:", result.accuracy)
+    print("Tool use:", result.tool_use)
+    print("Overall:", result.overall)
+
+
+def summary(args):
+    db = Database()
+    res = db.average_results(args.name)
+    for result in res.scores:
+        print_result(result)
+
+
 async def run():
     from argparse import ArgumentParser
 
     parser = ArgumentParser("mcpx-eval", description="LLM tool use evaluator")
+    parser.add_argument("--name", default="", help="Test name")
     parser.add_argument(
         "--model",
         "-m",
@@ -21,7 +46,7 @@ async def run():
     parser.add_argument(
         "--max-tool-calls", default=None, help="Maximum number of tool calls", type=int
     )
-    parser.add_argument("tests", help="Test files", nargs="*")
+    parser.add_argument("--config", help="Test config file")
     parser.add_argument(
         "--log",
         default=None,
@@ -30,6 +55,12 @@ async def run():
     )
     parser.add_argument(
         "--verbose", default=False, action="store_true", help="Enable verbose logging"
+    )
+    parser.add_argument(
+        "--db",
+        default=False,
+        action="store_true",
+        help="Summarize results from database",
     )
 
     args = parser.parse_args()
@@ -47,40 +78,36 @@ async def run():
         for handler in logging.root.handlers:
             handler.addFilter(logging.Filter("mcpx_eval"))
 
-    tests = [Test.load(t) for t in args.tests]
+    test = None
+    if args.config is not None:
+        test = Test.load(args.config)
+        for model in args.model:
+            test.models.append(model)
+        if args.name is None or args.name == "":
+            args.name = test.name
 
-    if len(args.model) > 0:
-        tests.append(
-            Test(
-                "command-line",
-                args.prompt,
-                args.check,
-                args.model,
-                max_tool_calls=args.max_tool_calls,
-            )
+    if args.db:
+        summary(args)
+        return
+
+    if test is None:
+        test = Test(
+            name=args.name,
+            prompt=args.prompt,
+            check=args.check,
+            model=args.model,
+            max_tool_calls=args.max_tool_calls,
         )
 
-
-    for test in tests:
-        logger.info(f"Running {test.name}: {', '.join(test.models)}")
-        judge = Judge(models=test.models)
-        res = await judge.run_test(test)
-        logger.info(f"{test.name} finished in {res.duration}")
-        for result in res.scores:
-            print()
-            print(result.model)
-            print("=" * len(result.model))
-            print()
-            print(f"Time: {result.duration}s")
-            print("Output:")
-            print(result.output)
-            print()
-            print("Score:")
-            print(result.description)
-            print("Number of tool calls:", result.tool_calls)
-            print("Accuracy:", result.accuracy)
-            print("Tool use:", result.tool_use)
-            print("Overall:", result.overall)
+    logger.info(f"Running {test.name}: {', '.join(test.models)}")
+    judge = Judge(models=test.models)
+    judge.db.save_test(test)
+    res = await judge.run_test(test)
+    logger.info(f"{test.name} finished in {res.duration}")
+    for result in res.scores:
+        if result is None:
+            continue
+        print_result(result)
 
 
 def main():

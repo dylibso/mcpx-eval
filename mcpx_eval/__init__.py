@@ -5,6 +5,7 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import List
+import sqlite3
 
 from mcpx_pydantic_ai import BaseModel, Agent, Field
 from mcpx_py import Ollama, Claude, Gemini, OpenAI, ChatConfig, Chat
@@ -19,8 +20,8 @@ class Score(BaseModel):
 
     model: str = Field("Name of model being scored")
     duration: float = Field("Total time of call in seconds")
-    output: str = Field(
-        "Resulting output of the prompt, taken from the 'content' field of the final message"
+    llm_output: str = Field(
+        "Model output, this is the 'content' field of the final message from the LLM"
     )
     description: str = Field("Description of results for this model")
     accuracy: float = Field("A score of how accurate the response is")
@@ -57,13 +58,161 @@ class Model:
     config: ChatConfig
 
 
+class Database:
+    conn: sqlite3.Connection
+
+    def __init__(self, path: str = "eval.db"):
+        self.conn = sqlite3.connect(path)
+
+        self.conn.executescript(
+            """
+            CREATE TABLE IF NOT EXISTS tests (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL,
+                max_tool_calls INTEGER,
+                prompt TEXT NOT NULL,
+                prompt_check TEXT NOT NULL,
+                UNIQUE(name)
+            );
+            CREATE TABLE IF NOT EXISTS eval_results (
+                id INTEGER PRIMARY KEY,
+                t TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                test_name TEXT NOT NULL,
+                model TEXT NOT NULL,
+                duration REAL NOT NULL,
+                output TEXT NOT NULL,
+                description TEXT NOT NULL,
+                accuracy REAL NOT NULL,
+                tool_use REAL NOT NULL,
+                tool_calls INT NOT NULL,
+                overall REAL NOT NULL,
+                FOREIGN KEY(test_name) REFERENCES tests(name)
+            );
+        """
+        )
+        self.conn.commit()
+
+    def save_score(self, name: str, score: Score, commit=True):
+        if name == "":
+            return
+        self.conn.execute(
+            """
+                INSERT INTO eval_results (
+                    test_name,
+                    model,
+                    duration,
+                    output,
+                    description,
+                    accuracy,
+                    tool_use,
+                    tool_calls,
+                    overall
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+            """,
+            (
+                name,
+                score.model,
+                score.duration,
+                score.llm_output,
+                score.description,
+                score.accuracy,
+                score.tool_use,
+                score.tool_calls,
+                score.overall,
+            ),
+        )
+        if commit:
+            self.conn.commit()
+
+    def save_test(self, test: "Test"):
+        self.conn.execute(
+            """
+            INSERT OR IGNORE INTO tests (name, max_tool_calls, prompt, prompt_check) VALUES (?, ?, ?, ?);
+            """,
+            (test.name, test.max_tool_calls, test.prompt, test.check),
+        )
+        self.conn.commit()
+
+    def save_results(self, name: str, results: Results):
+        for score in results.scores:
+            self.save_score(name, score, commit=False)
+        self.conn.commit()
+
+    def average_results(self, name: str) -> Results:
+        total_time = 0.0
+        cursor = self.conn.execute(
+            """
+            SELECT t, model, duration, output, 
+                   description, accuracy, tool_use, tool_calls, overall
+            FROM eval_results 
+            WHERE test_name=?
+        """,
+            (name,),
+        )
+        items = cursor.fetchall()
+        out = []
+        scoremap = {}
+        for item in items:
+            model = item[1]
+            if model not in scoremap:
+                scoremap[model] = []
+            scoremap[model].append(
+                Score(
+                    model=model,
+                    duration=item[2],
+                    llm_output=item[3],
+                    description=item[4],
+                    accuracy=item[5],
+                    tool_use=item[6],
+                    tool_calls=item[7],
+                    overall=item[8],
+                )
+            )
+
+        for model, scores in scoremap.items():
+            avg_duration = 0.0
+            avg_accuracy = 0.0
+            avg_tool_use = 0.0
+            avg_tool_calls = 0.0
+            avg_overall = 0.0
+            description = []
+            output = []
+            for score in scores:
+                avg_duration += score.duration
+                avg_accuracy += score.accuracy
+                avg_tool_use += score.tool_use
+                avg_tool_calls += score.tool_calls
+                avg_overall += score.overall
+                description.append(score.description)
+                output.append(score.llm_output)
+            n = len(scores)
+            out.append(
+                Score(
+                    model=model,
+                    duration=avg_duration / n,
+                    accuracy=avg_accuracy / n,
+                    tool_use=avg_tool_use / n,
+                    tool_calls=int(avg_tool_calls / n),
+                    overall=avg_overall / n,
+                    llm_output=f"Sample: {output[-1]}",
+                    description=f"Sample: {description[-1]}",
+                )
+            )
+
+        return Results(scores=out, duration=total_time)
+
+
 class Judge:
     agent: Agent
     models: List[Model]
+    db: Database
 
-    def __init__(self, models: List[Model | str] | None = None):
+    def __init__(
+        self, models: List[Model | str] | None = None, db: Database | None = None
+    ):
+        self.db = db or Database()
         self.agent = Agent(
-            "claude-3-5-sonnet-latest", result_type=Results, system_prompt=SYSTEM_PROMPT
+            "claude-3-5-sonnet-latest", result_type=Score, system_prompt=SYSTEM_PROMPT
         )
         self.models = []
         if models is not None:
@@ -83,10 +232,13 @@ class Judge:
             model.config.client = self.agent.client
         self.models.append(model)
 
-    async def run_test(self, test: "Test") -> Results:
-        return await self.run(
+    async def run_test(self, test: "Test", save=True) -> Results:
+        results = await self.run(
             test.prompt, test.check, max_tool_calls=test.max_tool_calls
         )
+        if save:
+            self.db.save_results(test.name, results)
+        return results
 
     async def run(
         self,
@@ -113,6 +265,10 @@ class Judge:
                 elif "gemini" in model.name:
                     chat = Chat(Gemini(config=model.config))
                 else:
+                    model.config.system = """
+                    You are a helpful large language model with tool calling access. Use the available tools
+                    to determine results you cannot answer on your own
+                    """
                     chat = Chat(Ollama(config=model.config))
                 model_cache[model.name] = chat
             start = datetime.now()
@@ -159,15 +315,15 @@ class Judge:
             tt = datetime.now() - start
             t += tt
             result["duration"] = f"{t.total_seconds()}s"
-            m.append(result)
 
-        data = json.dumps(m)
+            data = json.dumps(result)
 
-        logger.info("Analyzing results")
-        res = await self.agent.run(
-            user_prompt=f"<direction>Analyze the following results for the prompt {prompt}. {check}</direction>\n{data}"
-        )
-        return res.data
+            logger.info(f"Analyzing results of {model.name}")
+            res = await self.agent.run(
+                user_prompt=f"<direction>Analyze the following results for the prompt {prompt}. {check}</direction>\n{data}"
+            )
+            m.append(res.data)
+        return Results(scores=m, duration=t.total_seconds())
 
 
 class Test:
@@ -208,6 +364,6 @@ class Test:
             data.get("name", path),
             data["prompt"],
             data["check"],
-            data["models"],
+            data.get("models", []),
             max_tool_calls=data.get("max-tool-calls"),
         )
