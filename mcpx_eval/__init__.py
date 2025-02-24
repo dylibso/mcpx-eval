@@ -19,6 +19,7 @@ class Score(BaseModel):
     """
 
     model: str = Field("Name of model being scored")
+    model_version: str = Field("Version of the model")
     duration: float = Field("Total time of call in seconds")
     llm_output: str = Field(
         "Model output, this is the 'content' field of the final message from the LLM"
@@ -27,6 +28,9 @@ class Score(BaseModel):
     accuracy: float = Field("A score of how accurate the response is")
     tool_use: float = Field("A score of how appropriate the tool use is")
     tool_calls: int = Field("Number of tool calls")
+    clarity: float = Field("A score of how clear and understandable the response is")
+    helpfulness: float = Field("A score of how helpful the response is to the user")
+    user_aligned: float = Field("A score of how well the response aligns with user intent")
     overall: float = Field(
         "An overall score of the quality of the response, this may include things not included in the other scores"
     )
@@ -38,17 +42,27 @@ class Results(BaseModel):
 
 
 SYSTEM_PROMPT = """
-You are an large language model evaluator, you are an expert at comparing the output of various models based on 
-accuracy, tool use and overall quality of the output.
+You are a large language model evaluator, you are an expert at comparing the output of various models based on 
+accuracy, tool use, user experience, and overall quality of the output.
 
 - All numeric responses should be scored from 0.0 - 100.0, where 100 is the best score and 0 is the worst
 - Additional direction for each evaluation may be marked in the input between <direction></direction> tags
+
+Performance metrics:
+- The accuracy score should reflect the accuracy of the result generally and taking into account the <direction> block
 - The tool use score should be based on whether or not the correct tool was used and whether the minimum amount
   of tools were used to accomplish a task. Over use of tools or repeated use of tools should deduct points from
   this score.
-- The accuracy score should reflect the accuracy of the result generally and taking into account the <direction> block
-- The overall score should reflect the overall quality of the output
+
+User-perceived quality metrics:
+- The clarity score should measure how clear, concise, and understandable the model's response is
+- The helpfulness score should measure how useful the response is in addressing the user's need
+- The user_aligned score should measure how well the response aligns with the user's intent and expectations
+
+- The overall score should reflect the overall quality of the output, considering both performance and user experience
 - Try to utilize the tools that are available instead of searching for new tools
+
+Be thorough in your evaluation, considering how well the model's response meets both technical requirements and user needs.
 """
 
 
@@ -56,6 +70,7 @@ accuracy, tool use and overall quality of the output.
 class Model:
     name: str
     config: ChatConfig
+    version: str = "v0"
 
 
 class Database:
@@ -63,7 +78,7 @@ class Database:
 
     def __init__(self, path: str = "eval.db"):
         self.conn = sqlite3.connect(path)
-
+        
         self.conn.executescript(
             """
             CREATE TABLE IF NOT EXISTS tests (
@@ -79,14 +94,28 @@ class Database:
                 t TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 test_name TEXT NOT NULL,
                 model TEXT NOT NULL,
+                model_version TEXT NOT NULL,
                 duration REAL NOT NULL,
                 output TEXT NOT NULL,
                 description TEXT NOT NULL,
                 accuracy REAL NOT NULL,
                 tool_use REAL NOT NULL,
                 tool_calls INT NOT NULL,
+                clarity REAL NOT NULL DEFAULT 0.0,
+                helpfulness REAL NOT NULL DEFAULT 0.0, 
+                user_aligned REAL NOT NULL DEFAULT 0.0,
                 overall REAL NOT NULL,
                 FOREIGN KEY(test_name) REFERENCES tests(name)
+            );
+            
+            CREATE TABLE IF NOT EXISTS comparison_visualizations (
+                id INTEGER PRIMARY KEY,
+                t TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                name TEXT NOT NULL,
+                description TEXT NOT NULL,
+                test_names TEXT NOT NULL,
+                chart_data TEXT NOT NULL,
+                chart_type TEXT NOT NULL
             );
         """
         )
@@ -95,29 +124,38 @@ class Database:
     def save_score(self, name: str, score: Score, commit=True):
         if name == "":
             return
+            
         self.conn.execute(
             """
                 INSERT INTO eval_results (
                     test_name,
                     model,
+                    model_version,
                     duration,
                     output,
                     description,
                     accuracy,
                     tool_use,
                     tool_calls,
+                    clarity,
+                    helpfulness,
+                    user_aligned,
                     overall
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """,
             (
                 name,
                 score.model,
+                score.model_version,
                 score.duration,
                 score.llm_output,
                 score.description,
                 score.accuracy,
                 score.tool_use,
                 score.tool_calls,
+                score.clarity,
+                score.helpfulness,
+                score.user_aligned,
                 score.overall,
             ),
         )
@@ -138,12 +176,63 @@ class Database:
             self.save_score(name, score, commit=False)
         self.conn.commit()
 
+    def create_visualization(self, name: str, description: str, test_names: list, chart_type: str, chart_data: dict):
+        """
+        Create and save a visualization comparing results across different tests
+        
+        Args:
+            name: Name of the visualization
+            description: Description of what the visualization shows
+            test_names: List of test names to include in visualization
+            chart_type: Type of chart (bar, line, radar, etc.)
+            chart_data: JSON-serializable data for the chart
+        """
+        self.conn.execute(
+            """
+            INSERT INTO comparison_visualizations 
+            (name, description, test_names, chart_type, chart_data)
+            VALUES (?, ?, ?, ?, ?);
+            """,
+            (
+                name,
+                description,
+                json.dumps(test_names),
+                chart_type,
+                json.dumps(chart_data)
+            ),
+        )
+        self.conn.commit()
+    
+    def get_visualizations(self):
+        """Get all saved visualizations"""
+        cursor = self.conn.execute(
+            """
+            SELECT id, name, description, test_names, chart_type
+            FROM comparison_visualizations
+            ORDER BY t DESC
+            """
+        )
+        return cursor.fetchall()
+    
+    def get_visualization(self, viz_id):
+        """Get a specific visualization by ID"""
+        cursor = self.conn.execute(
+            """
+            SELECT id, name, description, test_names, chart_type, chart_data
+            FROM comparison_visualizations
+            WHERE id = ?
+            """,
+            (viz_id,)
+        )
+        return cursor.fetchone()
+        
     def average_results(self, name: str) -> Results:
         total_time = 0.0
         cursor = self.conn.execute(
             """
-            SELECT t, model, duration, output, 
-                   description, accuracy, tool_use, tool_calls, overall
+            SELECT t, model, model_version, duration, output, 
+                   description, accuracy, tool_use, tool_calls, 
+                   clarity, helpfulness, user_aligned, overall
             FROM eval_results 
             WHERE test_name=?
         """,
@@ -154,34 +243,51 @@ class Database:
         scoremap = {}
         for item in items:
             model = item[1]
-            if model not in scoremap:
-                scoremap[model] = []
-            scoremap[model].append(
+            model_version = item[2]
+            model_key = f"{model}:{model_version}"
+            
+            if model_key not in scoremap:
+                scoremap[model_key] = []
+            scoremap[model_key].append(
                 Score(
                     model=model,
-                    duration=item[2],
-                    llm_output=item[3],
-                    description=item[4],
-                    accuracy=item[5],
-                    tool_use=item[6],
-                    tool_calls=item[7],
-                    overall=item[8],
+                    model_version=model_version,
+                    duration=item[3],
+                    llm_output=item[4],
+                    description=item[5],
+                    accuracy=item[6],
+                    tool_use=item[7],
+                    tool_calls=item[8],
+                    clarity=item[9],
+                    helpfulness=item[10],
+                    user_aligned=item[11],
+                    overall=item[12],
                 )
             )
 
-        for model, scores in scoremap.items():
+        for model_key, scores in scoremap.items():
             avg_duration = 0.0
             avg_accuracy = 0.0
             avg_tool_use = 0.0
             avg_tool_calls = 0.0
+            avg_clarity = 0.0
+            avg_helpfulness = 0.0
+            avg_user_aligned = 0.0
             avg_overall = 0.0
             description = []
             output = []
+            
+            model = scores[0].model
+            model_version = scores[0].model_version
+            
             for score in scores:
                 avg_duration += score.duration
                 avg_accuracy += score.accuracy
                 avg_tool_use += score.tool_use
                 avg_tool_calls += score.tool_calls
+                avg_clarity += score.clarity
+                avg_helpfulness += score.helpfulness
+                avg_user_aligned += score.user_aligned
                 avg_overall += score.overall
                 description.append(score.description)
                 output.append(score.llm_output)
@@ -189,10 +295,14 @@ class Database:
             out.append(
                 Score(
                     model=model,
+                    model_version=model_version,
                     duration=avg_duration / n,
                     accuracy=avg_accuracy / n,
                     tool_use=avg_tool_use / n,
                     tool_calls=int(avg_tool_calls / n),
+                    clarity=avg_clarity / n,
+                    helpfulness=avg_helpfulness / n,
+                    user_aligned=avg_user_aligned / n,
                     overall=avg_overall / n,
                     llm_output=f"Sample: {output[-1]}",
                     description=f"Sample: {description[-1]}",
@@ -219,13 +329,14 @@ class Judge:
             for model in models:
                 self.add_model(model)
 
-    def add_model(self, model: Model | str):
+    def add_model(self, model: Model | str, version: str = "v0"):
         if isinstance(model, str):
             model = Model(
                 name=model,
                 config=ChatConfig(
                     model=model,
                 ),
+                version=version
             )
         model.config.model = model.name
         if model.config.client is None:
@@ -322,7 +433,12 @@ class Judge:
             res = await self.agent.run(
                 user_prompt=f"<direction>Analyze the following results for the prompt {prompt}. {check}</direction>\n{data}"
             )
-            m.append(res.data)
+            
+            # Add model version to the score
+            score_data = res.data
+            score_data.model_version = model.version
+            
+            m.append(score_data)
         return Results(scores=m, duration=t.total_seconds())
 
 

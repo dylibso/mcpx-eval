@@ -1,0 +1,3 @@
+name = "factorial-5"
+prompt = "Calculate the factorial of 5 using math functions"
+check = "eval-py or eval-js should be used to determine the factorial of 5 is 120"
