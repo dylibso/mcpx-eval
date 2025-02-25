@@ -19,20 +19,42 @@ class Score(BaseModel):
     """
 
     model: str = Field("Name of model being scored")
-    model_version: str = Field("Version of the model")
     duration: float = Field("Total time of call in seconds")
     llm_output: str = Field(
         "Model output, this is the 'content' field of the final message from the LLM"
     )
     description: str = Field("Description of results for this model")
+
+    # Core metrics
     accuracy: float = Field("A score of how accurate the response is")
     tool_use: float = Field("A score of how appropriate the tool use is")
     tool_calls: int = Field("Number of tool calls")
     clarity: float = Field("A score of how clear and understandable the response is")
     helpfulness: float = Field("A score of how helpful the response is to the user")
-    user_aligned: float = Field("A score of how well the response aligns with user intent")
+    user_aligned: float = Field(
+        "A score of how well the response aligns with user intent"
+    )
     overall: float = Field(
         "An overall score of the quality of the response, this may include things not included in the other scores"
+    )
+
+    # Hallucination metrics
+    hallucination_score: float = Field(
+        0.0,
+        description="A score representing the presence of hallucinations (lower is better)",
+    )
+    false_claims: list = Field(
+        [],
+        description="List of identified false claims or hallucinations in the response",
+    )
+
+    # Detailed tool use analysis
+    tool_analysis: dict = Field(
+        {},
+        description="Analysis of individual tool calls with success/relevance ratings",
+    )
+    redundant_tool_calls: int = Field(
+        0, description="Number of redundant or unnecessary tool calls"
     )
 
 
@@ -47,6 +69,7 @@ accuracy, tool use, user experience, and overall quality of the output.
 
 - All numeric responses should be scored from 0.0 - 100.0, where 100 is the best score and 0 is the worst
 - Additional direction for each evaluation may be marked in the input between <direction></direction> tags
+- Do not make assumptions about improvments to the quality of the output beyond what is noted in the <check></check> tags
 
 Performance metrics:
 - The accuracy score should reflect the accuracy of the result generally and taking into account the <direction> block
@@ -59,8 +82,19 @@ User-perceived quality metrics:
 - The helpfulness score should measure how useful the response is in addressing the user's need
 - The user_aligned score should measure how well the response aligns with the user's intent and expectations
 
+Advanced evaluation metrics:
+- The hallucination_score should measure the presence of made-up, incorrect, or factually unsupported statements
+  (lower is better, with 0 being no hallucinations and 100 being completely hallucinated)
+- The false_claims field should list any specific false statements or hallucinations identified in the response
+
 - The overall score should reflect the overall quality of the output, considering both performance and user experience
 - Try to utilize the tools that are available instead of searching for new tools
+
+For responses containing hallucinations, analyze:
+1. The severity of each hallucination (minor factual error vs completely fabricated information)
+2. The confidence with which hallucinated content is presented
+3. Whether hallucinations are central to the response or peripheral
+4. Whether the hallucination could lead to harmful actions if believed
 
 Be thorough in your evaluation, considering how well the model's response meets both technical requirements and user needs.
 """
@@ -70,7 +104,6 @@ Be thorough in your evaluation, considering how well the model's response meets 
 class Model:
     name: str
     config: ChatConfig
-    version: str = "v0"
 
 
 class Database:
@@ -78,7 +111,7 @@ class Database:
 
     def __init__(self, path: str = "eval.db"):
         self.conn = sqlite3.connect(path)
-        
+
         self.conn.executescript(
             """
             CREATE TABLE IF NOT EXISTS tests (
@@ -94,17 +127,20 @@ class Database:
                 t TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 test_name TEXT NOT NULL,
                 model TEXT NOT NULL,
-                model_version TEXT NOT NULL,
                 duration REAL NOT NULL,
                 output TEXT NOT NULL,
                 description TEXT NOT NULL,
                 accuracy REAL NOT NULL,
                 tool_use REAL NOT NULL,
                 tool_calls INT NOT NULL,
+                redundant_tool_calls INT NOT NULL DEFAULT 0,
                 clarity REAL NOT NULL DEFAULT 0.0,
                 helpfulness REAL NOT NULL DEFAULT 0.0, 
                 user_aligned REAL NOT NULL DEFAULT 0.0,
                 overall REAL NOT NULL,
+                hallucination_score REAL NOT NULL DEFAULT 0.0,
+                false_claims TEXT NOT NULL DEFAULT '[]',
+                tool_analysis TEXT NOT NULL DEFAULT '{}',
                 FOREIGN KEY(test_name) REFERENCES tests(name)
             );
             
@@ -124,39 +160,45 @@ class Database:
     def save_score(self, name: str, score: Score, commit=True):
         if name == "":
             return
-            
+
         self.conn.execute(
             """
                 INSERT INTO eval_results (
                     test_name,
                     model,
-                    model_version,
                     duration,
                     output,
                     description,
                     accuracy,
                     tool_use,
                     tool_calls,
+                    redundant_tool_calls,
                     clarity,
                     helpfulness,
                     user_aligned,
-                    overall
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                    overall,
+                    hallucination_score,
+                    false_claims,
+                    tool_analysis
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """,
             (
                 name,
                 score.model,
-                score.model_version,
                 score.duration,
                 score.llm_output,
                 score.description,
                 score.accuracy,
                 score.tool_use,
                 score.tool_calls,
+                score.redundant_tool_calls,
                 score.clarity,
                 score.helpfulness,
                 score.user_aligned,
                 score.overall,
+                score.hallucination_score,
+                json.dumps(score.false_claims),
+                json.dumps(score.tool_analysis),
             ),
         )
         if commit:
@@ -176,10 +218,17 @@ class Database:
             self.save_score(name, score, commit=False)
         self.conn.commit()
 
-    def create_visualization(self, name: str, description: str, test_names: list, chart_type: str, chart_data: dict):
+    def create_visualization(
+        self,
+        name: str,
+        description: str,
+        test_names: list,
+        chart_type: str,
+        chart_data: dict,
+    ):
         """
         Create and save a visualization comparing results across different tests
-        
+
         Args:
             name: Name of the visualization
             description: Description of what the visualization shows
@@ -198,11 +247,11 @@ class Database:
                 description,
                 json.dumps(test_names),
                 chart_type,
-                json.dumps(chart_data)
+                json.dumps(chart_data),
             ),
         )
         self.conn.commit()
-    
+
     def get_visualizations(self):
         """Get all saved visualizations"""
         cursor = self.conn.execute(
@@ -213,7 +262,7 @@ class Database:
             """
         )
         return cursor.fetchall()
-    
+
     def get_visualization(self, viz_id):
         """Get a specific visualization by ID"""
         cursor = self.conn.execute(
@@ -222,17 +271,19 @@ class Database:
             FROM comparison_visualizations
             WHERE id = ?
             """,
-            (viz_id,)
+            (viz_id,),
         )
         return cursor.fetchone()
-        
+
     def average_results(self, name: str) -> Results:
         total_time = 0.0
         cursor = self.conn.execute(
             """
-            SELECT t, model, model_version, duration, output, 
+            SELECT t, model, duration, output, 
                    description, accuracy, tool_use, tool_calls, 
-                   clarity, helpfulness, user_aligned, overall
+                   redundant_tool_calls, clarity, helpfulness, user_aligned, 
+                   overall, hallucination_score, false_claims,
+                   tool_analysis
             FROM eval_results 
             WHERE test_name=?
         """,
@@ -243,67 +294,112 @@ class Database:
         scoremap = {}
         for item in items:
             model = item[1]
-            model_version = item[2]
-            model_key = f"{model}:{model_version}"
-            
+            model_key = model
+
+            # Parse JSON fields
+            false_claims = json.loads(item[14]) if item[14] else []
+            tool_analysis = json.loads(item[15]) if item[15] else {}
+
             if model_key not in scoremap:
                 scoremap[model_key] = []
             scoremap[model_key].append(
                 Score(
                     model=model,
-                    model_version=model_version,
-                    duration=item[3],
-                    llm_output=item[4],
-                    description=item[5],
-                    accuracy=item[6],
-                    tool_use=item[7],
-                    tool_calls=item[8],
+                    duration=0.0,
+                    llm_output=item[3],
+                    description=item[4],
+                    accuracy=item[5],
+                    tool_use=item[6],
+                    tool_calls=item[7],
+                    redundant_tool_calls=item[8],
                     clarity=item[9],
                     helpfulness=item[10],
                     user_aligned=item[11],
                     overall=item[12],
+                    hallucination_score=item[13],
+                    false_claims=false_claims,
+                    tool_analysis=tool_analysis,
                 )
             )
 
         for model_key, scores in scoremap.items():
+            # Calculate averages
             avg_duration = 0.0
             avg_accuracy = 0.0
             avg_tool_use = 0.0
             avg_tool_calls = 0.0
+            avg_redundant_tool_calls = 0.0
             avg_clarity = 0.0
             avg_helpfulness = 0.0
             avg_user_aligned = 0.0
             avg_overall = 0.0
+            avg_hallucination = 0.0
+
+            # Lists for calculating standard deviations
+            all_accuracy = []
+            all_overall = []
+
+            # Collect data for aggregation
             description = []
             output = []
-            
+            combined_false_claims = []
+            combined_tool_analysis = {}
+
             model = scores[0].model
-            model_version = scores[0].model_version
-            
+
             for score in scores:
                 avg_duration += score.duration
                 avg_accuracy += score.accuracy
                 avg_tool_use += score.tool_use
                 avg_tool_calls += score.tool_calls
+                avg_redundant_tool_calls += score.redundant_tool_calls
                 avg_clarity += score.clarity
                 avg_helpfulness += score.helpfulness
                 avg_user_aligned += score.user_aligned
                 avg_overall += score.overall
+                avg_hallucination += score.hallucination_score
+
+                # Collect for std deviation calculation
+                all_accuracy.append(score.accuracy)
+                all_overall.append(score.overall)
+
+                # Aggregate data
                 description.append(score.description)
                 output.append(score.llm_output)
+
+                # Merge unique false claims
+                for claim in score.false_claims:
+                    if claim not in combined_false_claims:
+                        combined_false_claims.append(claim)
+
+                # Merge tool analysis data
+                for tool_id, analysis in score.tool_analysis.items():
+                    if tool_id not in combined_tool_analysis:
+                        combined_tool_analysis[tool_id] = []
+                    combined_tool_analysis[tool_id].append(analysis)
+
+            # Calculate standard deviations
+            # accuracy_std = (
+            #     statistics.stdev(all_accuracy) if len(all_accuracy) > 1 else 0.0
+            # )
+            # overall_std = statistics.stdev(all_overall) if len(all_overall) > 1 else 0.0
+
             n = len(scores)
             out.append(
                 Score(
                     model=model,
-                    model_version=model_version,
                     duration=avg_duration / n,
                     accuracy=avg_accuracy / n,
                     tool_use=avg_tool_use / n,
                     tool_calls=int(avg_tool_calls / n),
+                    redundant_tool_calls=int(avg_redundant_tool_calls / n),
                     clarity=avg_clarity / n,
                     helpfulness=avg_helpfulness / n,
                     user_aligned=avg_user_aligned / n,
                     overall=avg_overall / n,
+                    hallucination_score=avg_hallucination / n,
+                    false_claims=combined_false_claims,
+                    tool_analysis=combined_tool_analysis,
                     llm_output=f"Sample: {output[-1]}",
                     description=f"Sample: {description[-1]}",
                 )
@@ -329,14 +425,13 @@ class Judge:
             for model in models:
                 self.add_model(model)
 
-    def add_model(self, model: Model | str, version: str = "v0"):
+    def add_model(self, model: Model | str):
         if isinstance(model, str):
             model = Model(
                 name=model,
                 config=ChatConfig(
                     model=model,
                 ),
-                version=version
             )
         model.config.model = model.name
         if model.config.client is None:
@@ -429,15 +524,56 @@ class Judge:
 
             data = json.dumps(result)
 
+            # Analyze tool usage
+            tool_analysis = {}
+            redundant_tool_calls = 0
+
+            # Track previously seen tool patterns to detect redundancy
+            seen_tool_patterns = set()
+
+            # Process messages to analyze tool use
+            for i, msg in enumerate(result["messages"]):
+                if msg.get("tool") and not msg.get("is_error"):
+                    tool_name = msg["tool"]["name"]
+                    tool_input = msg["tool"]["input"]
+
+                    # Create a pattern string for redundancy detection
+                    tool_pattern = f"{tool_name}:{str(tool_input)}"
+
+                    # Check for redundancy
+                    if tool_pattern in seen_tool_patterns:
+                        redundant_tool_calls += 1
+                        redundancy_status = "redundant"
+                    else:
+                        seen_tool_patterns.add(tool_pattern)
+                        redundancy_status = "unique"
+
+                    # Store tool analysis
+                    tool_analysis[f"tool_{i}"] = {
+                        "name": tool_name,
+                        "input": tool_input,
+                        "redundancy": redundancy_status,
+                    }
+
             logger.info(f"Analyzing results of {model.name}")
             res = await self.agent.run(
-                user_prompt=f"<direction>Analyze the following results for the prompt {prompt}. {check}</direction>\n{data}"
+                user_prompt=f"""<direction>
+Analyze the following results for the prompt {prompt}.
+
+For the hallucination_score metric (0-100 scale, lower is better), carefully check for any false statements, 
+incorrect information, or made-up facts in the response and list them in the false_claims field.
+</direction>
+<check>{check}</check>
+{data}"""
             )
-            
-            # Add model version to the score
+
+            # Add additional metrics to the score
             score_data = res.data
-            score_data.model_version = model.version
-            
+
+            # Add tool analysis metrics
+            score_data.tool_analysis = tool_analysis
+            score_data.redundant_tool_calls = redundant_tool_calls
+
             m.append(score_data)
         return Results(scores=m, duration=t.total_seconds())
 
