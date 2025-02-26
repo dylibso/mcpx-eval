@@ -57,146 +57,6 @@ def summary(args):
         print_result(result)
 
 
-def generate_table(args):
-    """Generate an HTML table from test results"""
-    db = Database()
-
-    # Parse test names from comma-separated string
-    test_names = [name.strip() for name in args.tests.split(",")]
-
-    # Prepare HTML content
-    html = """
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>LLM Evaluation Results</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }
-        th, td { padding: 8px; text-align: left; border: 1px solid #ddd; }
-        th { background-color: #f2f2f2; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        .model-header { background-color: #e6f2ff; font-weight: bold; }
-        .highlight { background-color: #ffffcc; }
-        .best { font-weight: bold; color: #006600; }
-        h1, h2 { color: #333; }
-        .metric-group { margin-top: 10px; border-top: 2px solid #ccc; padding-top: 10px; }
-        .hallucination { color: #cc0000; }
-    </style>
-</head>
-<body>
-    <h1>LLM Evaluation Results</h1>
-"""
-
-    # Generate a table for each test
-    for test_name in test_names:
-        results = db.average_results(test_name)
-
-        scores_with_avg = []
-        # Calculate average scores for each model
-        for score in results.scores:
-            numeric_scores = [
-                score.accuracy,
-                score.tool_use,
-                score.clarity,
-                score.helpfulness,
-                score.overall
-            ]
-            scores_with_avg.append((score, sum(numeric_scores) / len(numeric_scores)))
-        
-        # Sort models by average score (highest first)
-        scores_with_avg.sort(key=lambda x: x[1], reverse=True)
-
-        html += f"""
-    <h2>Test: {test_name}</h2>
-    <table>
-        <tr>
-            <th>Model</th>
-"""
-
-        # Define metrics for vertical table
-        all_metrics = {
-            "Average Score": (lambda _, a: a, True),
-            "Accuracy": (lambda s, _: s.accuracy, True),
-            "Tool Use": (lambda s, _: s.tool_use, True),
-            "Clarity": (lambda s, _: s.clarity, True),
-            "Helpfulness": (lambda s, _: s.helpfulness, True),
-            "Overall": (lambda s, _: s.overall, True),
-            "Hallucination Score": (lambda s, _: s.hallucination_score, False),
-            "Tool Calls": (lambda s, _: s.tool_calls, None),
-            "Redundant Tool Calls": (lambda s, _: s.redundant_tool_calls, None),
-        }
-
-        # Add metrics as column headers
-        for metric_name in all_metrics:
-            html += f"<th>{metric_name}</th>\n"
-        html += "</tr>\n"
-
-        # Add a row for each model
-        for i, (score, avg) in enumerate(scores_with_avg):
-            # Set row class
-            row_class = "model-header"
-            
-            html += f'<tr class="{row_class}">'
-            html += f"<td><strong>{score.model}</strong></td>"
-
-            # Add values for each metric
-            for metric_name, (get_value, higher_is_better) in all_metrics.items():
-                value = get_value(score, avg)
-                
-                # Format based on type
-                if isinstance(value, float):
-                    formatted_value = f"{value:.2f}"
-                else:
-                    formatted_value = str(value)
-                
-                # Determine if this is the best value across all models for this metric
-                is_best = False
-                if higher_is_better is not None:
-                    all_values = [get_value(s, a) for s, a in scores_with_avg]
-                    best_value = max(all_values) if higher_is_better else min(all_values)
-                    # Mark as best if this model has the best value (allow ties)
-                    is_best = value == best_value
-                
-                if is_best:
-                    html += f'<td class="best">{formatted_value}</td>'
-                else:
-                    html += f"<td>{formatted_value}</td>"
-            
-            html += "</tr>\n"
-
-        # Close the table
-        html += "</table>\n"
-
-        # If there are false claims, add them
-        # for score in results.scores:
-        #     if score.false_claims and len(score.false_claims) > 0:
-        #         html += f"""
-        # <h3 class="hallucination">{score.model} - False Claims Detected:</h3>
-        # <ul>
-        # """
-        #         for claim in score.false_claims:
-        #             html += f"<li>{claim}</li>\n"
-        #         html += "</ul>\n"
-
-    # Close HTML
-    html += """
-</body>
-</html>
-"""
-
-    # Save to file
-    output_path = args.output or f"results_{'-'.join(test_names)}.html"
-    with open(output_path, "w") as f:
-        f.write(html)
-
-    print(f"HTML table saved to {output_path}")
-
-
-# Visualization functions removed
-
-
 def json_summary(args):
     """Generate a JSON summary of test data"""
     import json
@@ -238,7 +98,7 @@ def json_summary(args):
         with open(args.output, 'w') as f:
             f.write(formatted_json)
         print(f"JSON summary saved to {args.output}")
-        print(f"To visualize this file, run: uv run python -m mcpx_eval viz-json {args.output}")
+        print(f"To visualize this file, run: uv run python -m mcpx_eval html {args.output}")
     else:
         print(formatted_json)
     
@@ -783,20 +643,6 @@ async def run():
     # Summary command
     summary_parser = subparsers.add_parser("summary", help="Show test results summary")
     summary_parser.add_argument("name", help="Test name to summarize")
-
-    # Table command
-    table_parser = subparsers.add_parser("table", help="Generate HTML table of results")
-    table_parser.add_argument(
-        "--tests",
-        "-t",
-        required=True,
-        help="Comma-separated list of test names to include",
-    )
-    table_parser.add_argument(
-        "--output",
-        "-o",
-        help="Output HTML file path (default: results_[test-names].html)",
-    )
     
     # JSON summary command
     json_parser = subparsers.add_parser("json", help="Generate JSON summary of all test data")
@@ -822,7 +668,7 @@ async def run():
     )
     
     # JSON visualization command (standalone)
-    viz_json_parser = subparsers.add_parser("viz-json", help="Visualize JSON data from a file")
+    viz_json_parser = subparsers.add_parser("html", help="Visualize JSON data from a file")
     viz_json_parser.add_argument(
         "input",
         help="Input JSON file path",
@@ -869,18 +715,13 @@ async def run():
         summary(args)
         return
 
-    # Table command
-    elif command == "table":
-        generate_table(args)
-        return
-        
     # JSON summary command
     elif command == "json":
         json_summary(args)
         return
         
     # JSON visualization command
-    elif command == "viz-json":
+    elif command == "html":
         import json
         try:
             with open(args.input, 'r') as f:
@@ -958,8 +799,8 @@ def main():
     print("  Generate JSON summary:                uv run python -m mcpx_eval json")
     print("  Generate and visualize JSON:          uv run python -m mcpx_eval json --visualize")
     print("  Save JSON to file:                    uv run python -m mcpx_eval json -o results.json")
-    print("  Visualize existing JSON file:         uv run python -m mcpx_eval viz-json results.json")
-    print("  Save visualization to HTML:           uv run python -m mcpx_eval viz-json results.json -o viz.html")
+    print("  Visualize existing JSON file:         uv run python -m mcpx_eval html results.json")
+    print("  Save visualization to HTML:           uv run python -m mcpx_eval html results.json -o viz.html")
 
 
 if __name__ == "__main__":
