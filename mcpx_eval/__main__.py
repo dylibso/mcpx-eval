@@ -305,29 +305,6 @@ def visualize_json(data, output_path=None):
                 font-size: 0.9em;
                 color: #cc0000;
             }
-            .summary-card {
-                background-color: white;
-                border-radius: 5px;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-                padding: 15px;
-                margin-bottom: 20px;
-                display: flex;
-                justify-content: space-between;
-            }
-            .summary-item {
-                text-align: center;
-                flex: 1;
-            }
-            .summary-label {
-                font-size: 0.9em;
-                color: #666;
-                margin-bottom: 5px;
-            }
-            .summary-value {
-                font-size: 1.5em;
-                font-weight: bold;
-                color: #333;
-            }
             /* Removed hallucination-details styling */
         </style>
     </head>
@@ -336,32 +313,7 @@ def visualize_json(data, output_path=None):
         <div class="timestamp">Generated on: """ + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + """</div>
         
         <div id="comparison-tab">
-                <!-- Overall Summary -->
                 <div class="container">
-                    <h2>Overall Summary</h2>
-                    <div class="summary-card">
-                        <div class="summary-item">
-                            <div class="summary-label">Tests</div>
-                            <div class="summary-value" id="total-tests"></div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-label">Models</div>
-                            <div class="summary-value" id="total-models"></div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-label">Avg Accuracy</div>
-                            <div class="summary-value" id="avg-accuracy"></div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-label">Avg Tool Use</div>
-                            <div class="summary-value" id="avg-tool-use"></div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-label">Avg Overall</div>
-                            <div class="summary-value" id="avg-overall"></div>
-                        </div>
-                    </div>
-                    
                     <h3>Model Rankings (All Tests)</h3>
                     <table id="overall-table">
                         <thead>
@@ -427,21 +379,6 @@ def visualize_json(data, output_path=None):
                 const numValues = values.filter(v => typeof v === 'number');
                 if (!numValues.length) return 0;
                 return numValues.reduce((sum, val) => sum + val, 0) / numValues.length;
-            }
-            
-            // Populate the overall summary
-            function populateOverallSummary() {
-                const totalTests = jsonData.test_count || Object.keys(jsonData.tests || {}).length;
-                const totalModels = jsonData.model_count || Object.keys(jsonData.total?.models || {}).length;
-                
-                document.getElementById('total-tests').textContent = totalTests;
-                document.getElementById('total-models').textContent = totalModels;
-                
-                if (jsonData.total && jsonData.total.metrics) {
-                    document.getElementById('avg-accuracy').textContent = formatPercent(jsonData.total.metrics.accuracy);
-                    document.getElementById('avg-tool-use').textContent = formatPercent(jsonData.total.metrics.tool_use);
-                    document.getElementById('avg-overall').textContent = formatPercent(jsonData.total.metrics.overall);
-                }
             }
             
             // Populate the overall model rankings table
@@ -754,8 +691,7 @@ def visualize_json(data, output_path=None):
             
             // Initialize the page
             document.addEventListener('DOMContentLoaded', function() {
-                // Populate the comparison tables
-                populateOverallSummary();
+                // Populate the tables
                 populateOverallTable();
                 createTestTables();
                 
