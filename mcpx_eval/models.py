@@ -1,6 +1,13 @@
 from mcpx_pydantic_ai import BaseModel, Field
 from typing import List
 import json
+from dataclasses import dataclass
+from mcpx_py import ChatConfig
+
+@dataclass
+class Model:
+    name: str
+    config: ChatConfig
 
 class Score(BaseModel):
     """

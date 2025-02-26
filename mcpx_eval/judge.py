@@ -1,20 +1,15 @@
 import logging
 from typing import List
 from datetime import datetime, timedelta
-from dataclasses import dataclass
+import json
 from mcpx_pydantic_ai import Agent
 from mcpx_py import Chat, Claude, OpenAI, Gemini, Ollama, ChatConfig
 
-from .models import Score, Results, Test
+from .models import Score, Results, Test, Model
 from .database import Database
 from .constants import SYSTEM_PROMPT, TEST_PROMPT
 
 logger = logging.getLogger(__name__)
-
-@dataclass
-class Model:
-    name: str
-    config: ChatConfig
 
 class Judge:
     agent: Agent
@@ -45,5 +40,129 @@ class Judge:
         return results
 
     async def run(self, prompt, check, max_tool_calls: int | None = None) -> Results:
-        # ... [keeping the existing run implementation]
-        pass
+        m = []
+        t = timedelta(seconds=0)
+        model_cache = {}
+        for model in self.models:
+            logger.info(f"Evaluating model {model.name}")
+            if model.name in model_cache:
+                chat = model_cache[model.name]
+            else:
+                if "claude" in model.name:
+                    chat = Chat(Claude(config=model.config))
+                elif (
+                    model.name in ["gpt-4o", "o1", "o1-mini", "o3-mini", "o3"]
+                    or "gpt-3.5" in model.name
+                    or "gpt-4" in model.name
+                ):
+                    chat = Chat(OpenAI(config=model.config))
+                elif "gemini" in model.name:
+                    chat = Chat(Gemini(config=model.config))
+                else:
+                    model.config.system = """
+                    You are a helpful large language model with tool calling access. Use the available tools
+                    to determine results you cannot answer on your own
+                    """
+                    chat = Chat(Ollama(config=model.config))
+                model_cache[model.name] = chat
+            start = datetime.now()
+            result = {"model": model.name, "messages": []}
+            tool_calls = 0
+            try:
+                async for response in chat.send_message(prompt):
+                    tool = None
+                    if response.tool is not None:
+                        logger.info(f"Tool: {response.tool.name} {response.tool.input}")
+                        tool = {
+                            "name": response.tool.name,
+                            "input": response.tool.input,
+                        }
+                        if max_tool_calls is not None and tool_calls >= max_tool_calls:
+                            result["messages"].append(
+                                {
+                                    "error": f"Stopping, {tool_calls} tool calls when the maximum is {max_tool_calls}",
+                                    "role": "error",
+                                    "is_error": True,
+                                    "tool": tool,
+                                }
+                            )
+                            break
+                        tool_calls += 1
+                    result["messages"].append(
+                        {
+                            "content": response.content,
+                            "role": response.role,
+                            "is_error": response._error or False,
+                            "tool": tool,
+                        }
+                    )
+            except Exception as exc:
+                logger.error(f"Error message: {str(exc)}")
+                result["messages"].append(
+                    {
+                        "error": str(exc),
+                        "role": "error",
+                        "is_error": True,
+                        "tool": None,
+                    }
+                )
+            tt = datetime.now() - start
+            duration_seconds = tt.total_seconds()
+            t += tt
+            result["duration"] = f"{duration_seconds}s"
+
+            data = json.dumps(result)
+
+            # Analyze tool usage
+            tool_analysis = {}
+            redundant_tool_calls = 0
+
+            # Track previously seen tool patterns to detect redundancy
+            seen_tool_patterns = set()
+
+            # Process messages to analyze tool use
+            for i, msg in enumerate(result["messages"]):
+                if msg.get("tool") and not msg.get("is_error"):
+                    tool_name = msg["tool"]["name"]
+                    tool_input = msg["tool"]["input"]
+
+                    # Create a pattern string for redundancy detection
+                    tool_pattern = f"{tool_name}:{str(tool_input)}"
+
+                    # Check for redundancy
+                    if tool_pattern in seen_tool_patterns:
+                        redundant_tool_calls += 1
+                        redundancy_status = "redundant"
+                    else:
+                        seen_tool_patterns.add(tool_pattern)
+                        redundancy_status = "unique"
+
+                    # Store tool analysis
+                    tool_analysis[f"tool_{i}"] = {
+                        "name": tool_name,
+                        "input": tool_input,
+                        "redundancy": redundancy_status,
+                    }
+
+            logger.info(f"Analyzing results of {model.name}")
+            res = await self.agent.run(
+                user_prompt=f"""<direction>
+Analyze the following results for the prompt {prompt}.
+
+For the hallucination_score metric (0-100 scale, lower is better), carefully check for any false statements, 
+incorrect information, or made-up facts in the response and list them in the false_claims field.
+</direction>
+<check>{check}</check>
+{data}"""
+            )
+
+            # Add additional metrics to the score
+            score_data = res.data
+
+            # Add tool analysis metrics and duration
+            score_data.tool_analysis = tool_analysis
+            score_data.redundant_tool_calls = redundant_tool_calls
+            score_data.duration = duration_seconds
+
+            m.append(score_data)
+        return Results(scores=m, duration=t.total_seconds())
