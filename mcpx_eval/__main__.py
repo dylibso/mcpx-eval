@@ -60,7 +60,7 @@ def summary(args):
 def json_summary(args):
     """Generate a JSON summary of test data"""
     import json
-    
+
     db = Database()
     summary = db.generate_json_summary()
 
@@ -68,43 +68,44 @@ def json_summary(args):
     if args.name:
         if args.name in summary["tests"]:
             filtered_summary = {
-                "tests": {
-                    args.name: summary["tests"][args.name]
-                },
+                "tests": {args.name: summary["tests"][args.name]},
                 "total": {
                     "models": {},
                     "metrics": summary["tests"][args.name]["metrics"],
                     "test_count": 1,
-                    "model_count": summary["tests"][args.name]["model_count"]
+                    "model_count": summary["tests"][args.name]["model_count"],
                 },
-                "generated_at": summary["generated_at"]
+                "generated_at": summary["generated_at"],
             }
             # Include only models that participated in this test
             for model_name, model_data in summary["total"]["models"].items():
                 if model_name in summary["tests"][args.name]["models"]:
                     filtered_summary["total"]["models"][model_name] = {
                         **model_data,
-                        "test_count": 1
+                        "test_count": 1,
                     }
             summary = filtered_summary
         else:
             print(f"Warning: Test '{args.name}' not found in results")
-    
+
     # Format JSON with indentation for readability
     formatted_json = json.dumps(summary, indent=2)
-    
+
     # Output to file or stdout
     if args.output:
-        with open(args.output, 'w') as f:
+        with open(args.output, "w") as f:
             f.write(formatted_json)
         print(f"JSON summary saved to {args.output}")
-        print(f"To visualize this file, run: uv run python -m mcpx_eval html {args.output}")
+        print(
+            f"To visualize this file, run: uv run python -m mcpx_eval html {args.output}"
+        )
     else:
         print(formatted_json)
-    
+
     # If visualization is requested, create and open it
     if args.visualize:
         visualize_json(summary, args.viz_output)
+
 
 def visualize_json(data, output_path=None):
     """Create an interactive HTML visualization of JSON data"""
@@ -112,9 +113,10 @@ def visualize_json(data, output_path=None):
     import webbrowser
     from tempfile import NamedTemporaryFile
     from datetime import datetime
-    
+
     # Create HTML content with comparison tables and JSON viewer
-    html = """
+    html = (
+        """
     <!DOCTYPE html>
     <html>
     <head>
@@ -215,7 +217,9 @@ def visualize_json(data, output_path=None):
     </head>
     <body>
         <h1>MCPX Evaluation JSON Visualization</h1>
-        <div class="timestamp">Generated on: """ + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + """</div>
+        <div class="timestamp">Generated on: """
+        + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        + """</div>
         
         <div id="comparison-tab">
                 <div id="overall-rankings" style="display: none;">
@@ -254,7 +258,9 @@ def visualize_json(data, output_path=None):
         
         <script>
             // The JSON data
-            const jsonData = """ + json.dumps(data) + """;
+            const jsonData = """
+        + json.dumps(data)
+        + """;
             
             // Format number as percentage
             function formatPercent(value) {
@@ -706,21 +712,23 @@ def visualize_json(data, output_path=None):
     </body>
     </html>
     """
-    
+    )
+
     # Write to temporary file and open in browser
-    with NamedTemporaryFile(suffix='.html', delete=False, mode='w') as f:
+    with NamedTemporaryFile(suffix=".html", delete=False, mode="w") as f:
         f.write(html)
         temp_path = f.name
-    
+
     print(f"Opening JSON visualization in web browser...")
     webbrowser.open(f"file://{temp_path}")
-    
+
     # Also save a copy to the specified location if provided
     if output_path:
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             f.write(html)
         print(f"JSON visualization saved to {output_path}")
         print(f"To view this visualization again later, open the file in your browser.")
+
 
 # Display visualization function removed
 
@@ -748,18 +756,20 @@ async def run():
     )
     test_parser.add_argument("--config", help="Test config file")
     test_parser.add_argument(
-        "--iter", 
-        default=1, 
+        "--iter",
+        default=1,
         type=int,
-        help="Number of times to run the test for each model"
+        help="Number of times to run the test for each model",
     )
 
     # Summary command
     summary_parser = subparsers.add_parser("summary", help="Show test results summary")
     summary_parser.add_argument("name", help="Test name to summarize")
-    
+
     # JSON summary command
-    json_parser = subparsers.add_parser("json", help="Generate JSON summary of all test data")
+    json_parser = subparsers.add_parser(
+        "json", help="Generate JSON summary of all test data"
+    )
     json_parser.add_argument(
         "--name",
         "-n",
@@ -780,9 +790,11 @@ async def run():
         "--viz-output",
         help="Output path for HTML visualization (optional)",
     )
-    
+
     # JSON visualization command (standalone)
-    viz_json_parser = subparsers.add_parser("html", help="Visualize JSON data from a file")
+    viz_json_parser = subparsers.add_parser(
+        "html", help="Visualize JSON data from a file"
+    )
     viz_json_parser.add_argument(
         "input",
         help="Input JSON file path",
@@ -833,17 +845,20 @@ async def run():
     elif command == "json":
         json_summary(args)
         return
-        
+
     # JSON visualization command
     elif command == "html":
         import json
+
         try:
-            with open(args.input, 'r') as f:
+            with open(args.input, "r") as f:
                 data = json.load(f)
             visualize_json(data, args.output)
         except FileNotFoundError:
             print(f"Error: File '{args.input}' not found.")
-            print(f"Generate a JSON file first with: uv run python -m mcpx_eval json -o {args.input}")
+            print(
+                f"Generate a JSON file first with: uv run python -m mcpx_eval json -o {args.input}"
+            )
             return
         except json.JSONDecodeError:
             print(f"Error: '{args.input}' is not a valid JSON file.")
@@ -869,36 +884,38 @@ async def run():
             )
 
         iterations = args.iter
-        logger.info(f"Running {test.name}: {', '.join(test.models)} ({iterations} iteration{'s' if iterations > 1 else ''})")
+        logger.info(
+            f"Running {test.name}: {', '.join(test.models)} ({iterations} iteration{'s' if iterations > 1 else ''})"
+        )
         judge = Judge(models=test.models)
         judge.db.save_test(test)
-        
+
         all_results = []
         total_duration = 0
-        
+
         for i in range(iterations):
             if iterations > 1:
-                logger.info(f"Iteration {i+1}/{iterations}")
-            
+                logger.info(f"Iteration {i + 1}/{iterations}")
+
             # For multiple iterations, pass save=True to ensure each run is saved to DB
             res = await judge.run_test(test, save=True)
             total_duration += res.duration
             all_results.extend(res.scores)
-            
+
             if iterations > 1:
-                logger.info(f"Iteration {i+1} finished in {res.duration}s")
-        
+                logger.info(f"Iteration {i + 1} finished in {res.duration}s")
+
         logger.info(f"{test.name} finished in {total_duration}s total")
-        
+
         # When multiple iterations are run, only show the last iteration's results
         # to avoid overwhelming the user with output
         results_to_print = all_results if iterations == 1 else res.scores
-        
+
         if iterations > 1:
             print(f"\nShowing results from iteration {iterations} of {iterations}.")
             print(f"All {iterations} iterations have been saved to the database.")
             print(f"Use 'mcpx-eval summary {test.name}' to see aggregated results.\n")
-        
+
         for result in results_to_print:
             if result is None:
                 continue
@@ -907,14 +924,22 @@ async def run():
 
 def main():
     asyncio.run(run())
-    
+
     # Print helpful usage examples at the end
     print("\nUsage examples:")
     print("  Generate JSON summary:                uv run python -m mcpx_eval json")
-    print("  Generate and visualize JSON:          uv run python -m mcpx_eval json --visualize")
-    print("  Save JSON to file:                    uv run python -m mcpx_eval json -o results.json")
-    print("  Visualize existing JSON file:         uv run python -m mcpx_eval html results.json")
-    print("  Save visualization to HTML:           uv run python -m mcpx_eval html results.json -o viz.html")
+    print(
+        "  Generate and visualize JSON:          uv run python -m mcpx_eval json --visualize"
+    )
+    print(
+        "  Save JSON to file:                    uv run python -m mcpx_eval json -o results.json"
+    )
+    print(
+        "  Visualize existing JSON file:         uv run python -m mcpx_eval html results.json"
+    )
+    print(
+        "  Save visualization to HTML:           uv run python -m mcpx_eval html results.json -o viz.html"
+    )
 
 
 if __name__ == "__main__":
