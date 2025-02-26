@@ -1182,7 +1182,7 @@ async def run():
     # Visualization commands removed
 
     # Summary command
-    elif command == "summary":
+    if command == "summary":
         summary(args)
         return
 
@@ -1223,7 +1223,7 @@ async def run():
 
         if test is None:
             test = Test(
-                name=args.name,
+                name=getattr(args, "name", ""),
                 prompt=args.prompt or "",
                 check=args.check or "",
                 models=args.model,
