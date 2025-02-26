@@ -315,7 +315,7 @@ def visualize_json(data, output_path=None):
     from tempfile import NamedTemporaryFile
     from datetime import datetime
     
-    # Create HTML content with JSON viewer
+    # Create HTML content with comparison tables and JSON viewer
     html = """
     <!DOCTYPE html>
     <html>
@@ -330,22 +330,93 @@ def visualize_json(data, output_path=None):
                 margin: 0 auto;
                 background-color: #f5f5f5;
             }
-            h1 {
+            h1, h2, h3 {
                 color: #333;
                 text-align: center;
-                margin-bottom: 30px;
+            }
+            h1 {
+                margin-bottom: 20px;
+            }
+            h2 {
+                margin-top: 40px;
+                margin-bottom: 20px;
+                border-bottom: 1px solid #ddd;
+                padding-bottom: 10px;
             }
             .container {
                 background-color: white;
                 padding: 20px;
                 border-radius: 5px;
                 box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                margin-bottom: 30px;
             }
             .timestamp {
                 text-align: center;
                 color: #777;
                 font-size: 0.9em;
                 margin-bottom: 20px;
+            }
+            /* Table Styles */
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 30px;
+            }
+            th, td {
+                padding: 10px;
+                text-align: left;
+                border: 1px solid #ddd;
+            }
+            th {
+                background-color: #f2f2f2;
+                font-weight: bold;
+            }
+            tr:nth-child(even) {
+                background-color: #f9f9f9;
+            }
+            .model-header {
+                background-color: #e6f2ff;
+                font-weight: bold;
+            }
+            .best {
+                font-weight: bold;
+                color: #006600;
+            }
+            .worst {
+                color: #cc0000;
+            }
+            .metric-name {
+                font-weight: bold;
+            }
+            .false-claims {
+                margin-top: 5px;
+                font-size: 0.9em;
+                color: #cc0000;
+            }
+            .tab-container {
+                margin-bottom: 30px;
+            }
+            .tabs {
+                display: flex;
+                border-bottom: 1px solid #ddd;
+                margin-bottom: 20px;
+            }
+            .tab {
+                padding: 10px 20px;
+                cursor: pointer;
+                background-color: #f2f2f2;
+                margin-right: 5px;
+                border-radius: 5px 5px 0 0;
+            }
+            .tab.active {
+                background-color: #4CAF50;
+                color: white;
+            }
+            .tab-content {
+                display: none;
+            }
+            .tab-content.active {
+                display: block;
             }
             /* JSON Tree Viewer Styles */
             .json-tree {
@@ -422,28 +493,509 @@ def visualize_json(data, output_path=None):
             button:hover {
                 background-color: #45a049;
             }
+            .summary-card {
+                background-color: white;
+                border-radius: 5px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                padding: 15px;
+                margin-bottom: 20px;
+                display: flex;
+                justify-content: space-between;
+            }
+            .summary-item {
+                text-align: center;
+                flex: 1;
+            }
+            .summary-label {
+                font-size: 0.9em;
+                color: #666;
+                margin-bottom: 5px;
+            }
+            .summary-value {
+                font-size: 1.5em;
+                font-weight: bold;
+                color: #333;
+            }
+            .hallucination-details {
+                margin-top: 10px;
+                padding: 10px;
+                background-color: #fff0f0;
+                border-radius: 5px;
+                border-left: 3px solid #cc0000;
+            }
         </style>
     </head>
     <body>
         <h1>MCPX Evaluation JSON Visualization</h1>
         <div class="timestamp">Generated on: """ + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + """</div>
         
-        <div class="controls">
-            <button id="expand-all">Expand All</button>
-            <button id="collapse-all">Collapse All</button>
-        </div>
-        
-        <div class="search-container">
-            <input type="text" id="search-input" placeholder="Search in JSON...">
-        </div>
-        
-        <div class="container">
-            <div id="json-tree" class="json-tree"></div>
+        <div class="tab-container">
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('comparison-tab')">Model Comparison</div>
+                <div class="tab" onclick="switchTab('raw-json-tab')">Raw JSON Data</div>
+            </div>
+            
+            <div id="comparison-tab" class="tab-content active">
+                <!-- Overall Summary -->
+                <div class="container">
+                    <h2>Overall Summary</h2>
+                    <div class="summary-card">
+                        <div class="summary-item">
+                            <div class="summary-label">Tests</div>
+                            <div class="summary-value" id="total-tests"></div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Models</div>
+                            <div class="summary-value" id="total-models"></div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Avg Accuracy</div>
+                            <div class="summary-value" id="avg-accuracy"></div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Avg Tool Use</div>
+                            <div class="summary-value" id="avg-tool-use"></div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Avg Overall</div>
+                            <div class="summary-value" id="avg-overall"></div>
+                        </div>
+                    </div>
+                    
+                    <h3>Model Rankings (All Tests)</h3>
+                    <table id="overall-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Model</th>
+                                <th>Average Score</th>
+                                <th>Accuracy</th>
+                                <th>Tool Use</th>
+                                <th>Clarity</th>
+                                <th>Helpfulness</th>
+                                <th>Overall</th>
+                                <th>Hallucination</th>
+                                <th>Tool Calls</th>
+                                <th>Tests</th>
+                            </tr>
+                        </thead>
+                        <tbody id="overall-table-body">
+                            <!-- Filled by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Individual Test Results -->
+                <div id="test-results">
+                    <!-- Filled by JavaScript -->
+                </div>
+            </div>
+            
+            <div id="raw-json-tab" class="tab-content">
+                <div class="container">
+                    <div class="controls">
+                        <button id="expand-all">Expand All</button>
+                        <button id="collapse-all">Collapse All</button>
+                    </div>
+                    
+                    <div class="search-container">
+                        <input type="text" id="search-input" placeholder="Search in JSON...">
+                    </div>
+                    
+                    <div id="json-tree" class="json-tree"></div>
+                </div>
+            </div>
         </div>
         
         <script>
             // The JSON data
             const jsonData = """ + json.dumps(data) + """;
+            
+            // Switch between tabs
+            function switchTab(tabId) {
+                // Hide all tab contents
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                // Deactivate all tabs
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                
+                // Activate the selected tab
+                document.getElementById(tabId).classList.add('active');
+                
+                // Find and activate the tab button
+                Array.from(document.querySelectorAll('.tab')).find(tab => 
+                    tab.getAttribute('onclick').includes(tabId)
+                ).classList.add('active');
+            }
+            
+            // Format number as percentage
+            function formatPercent(value) {
+                if (typeof value !== 'number') return 'N/A';
+                return value.toFixed(2) + '%';
+            }
+            
+            // Find best and worst values in an array
+            function findBestWorst(values, higherIsBetter = true) {
+                if (!values.length) return { best: null, worst: null };
+                
+                const numValues = values.filter(v => typeof v === 'number');
+                if (!numValues.length) return { best: null, worst: null };
+                
+                if (higherIsBetter) {
+                    return {
+                        best: Math.max(...numValues),
+                        worst: Math.min(...numValues)
+                    };
+                } else {
+                    return {
+                        best: Math.min(...numValues),
+                        worst: Math.max(...numValues)
+                    };
+                }
+            }
+            
+            // Calculate average of numeric values
+            function calculateAverage(values) {
+                const numValues = values.filter(v => typeof v === 'number');
+                if (!numValues.length) return 0;
+                return numValues.reduce((sum, val) => sum + val, 0) / numValues.length;
+            }
+            
+            // Populate the overall summary
+            function populateOverallSummary() {
+                const totalTests = jsonData.test_count || Object.keys(jsonData.tests || {}).length;
+                const totalModels = jsonData.model_count || Object.keys(jsonData.total?.models || {}).length;
+                
+                document.getElementById('total-tests').textContent = totalTests;
+                document.getElementById('total-models').textContent = totalModels;
+                
+                if (jsonData.total && jsonData.total.metrics) {
+                    document.getElementById('avg-accuracy').textContent = formatPercent(jsonData.total.metrics.accuracy);
+                    document.getElementById('avg-tool-use').textContent = formatPercent(jsonData.total.metrics.tool_use);
+                    document.getElementById('avg-overall').textContent = formatPercent(jsonData.total.metrics.overall);
+                }
+            }
+            
+            // Populate the overall model rankings table
+            function populateOverallTable() {
+                const tableBody = document.getElementById('overall-table-body');
+                tableBody.innerHTML = '';
+                
+                if (!jsonData.total || !jsonData.total.models) return;
+                
+                // Get models and calculate average scores
+                const models = Object.entries(jsonData.total.models).map(([name, data]) => {
+                    const avgScore = calculateAverage([
+                        data.accuracy,
+                        data.tool_use,
+                        data.clarity,
+                        data.helpfulness,
+                        data.overall
+                    ]);
+                    
+                    return {
+                        name,
+                        avgScore,
+                        ...data
+                    };
+                });
+                
+                // Sort by average score (highest first)
+                models.sort((a, b) => b.avgScore - a.avgScore);
+                
+                // Get all values for each metric to determine best/worst
+                const allValues = {
+                    avgScore: models.map(m => m.avgScore),
+                    accuracy: models.map(m => m.accuracy),
+                    tool_use: models.map(m => m.tool_use),
+                    clarity: models.map(m => m.clarity),
+                    helpfulness: models.map(m => m.helpfulness),
+                    overall: models.map(m => m.overall),
+                    hallucination_score: models.map(m => m.hallucination_score)
+                };
+                
+                // Find best/worst values
+                const bestWorst = {
+                    avgScore: findBestWorst(allValues.avgScore),
+                    accuracy: findBestWorst(allValues.accuracy),
+                    tool_use: findBestWorst(allValues.tool_use),
+                    clarity: findBestWorst(allValues.clarity),
+                    helpfulness: findBestWorst(allValues.helpfulness),
+                    overall: findBestWorst(allValues.overall),
+                    hallucination_score: findBestWorst(allValues.hallucination_score, false)
+                };
+                
+                // Add rows to the table
+                models.forEach((model, index) => {
+                    const row = document.createElement('tr');
+                    row.className = 'model-header';
+                    
+                    // Rank
+                    const rankCell = document.createElement('td');
+                    rankCell.textContent = index + 1;
+                    row.appendChild(rankCell);
+                    
+                    // Model name
+                    const nameCell = document.createElement('td');
+                    nameCell.textContent = model.name;
+                    row.appendChild(nameCell);
+                    
+                    // Average score
+                    const avgScoreCell = document.createElement('td');
+                    avgScoreCell.textContent = formatPercent(model.avgScore);
+                    if (model.avgScore === bestWorst.avgScore.best) avgScoreCell.className = 'best';
+                    if (model.avgScore === bestWorst.avgScore.worst) avgScoreCell.className = 'worst';
+                    row.appendChild(avgScoreCell);
+                    
+                    // Accuracy
+                    const accuracyCell = document.createElement('td');
+                    accuracyCell.textContent = formatPercent(model.accuracy);
+                    if (model.accuracy === bestWorst.accuracy.best) accuracyCell.className = 'best';
+                    if (model.accuracy === bestWorst.accuracy.worst) accuracyCell.className = 'worst';
+                    row.appendChild(accuracyCell);
+                    
+                    // Tool Use
+                    const toolUseCell = document.createElement('td');
+                    toolUseCell.textContent = formatPercent(model.tool_use);
+                    if (model.tool_use === bestWorst.tool_use.best) toolUseCell.className = 'best';
+                    if (model.tool_use === bestWorst.tool_use.worst) toolUseCell.className = 'worst';
+                    row.appendChild(toolUseCell);
+                    
+                    // Clarity
+                    const clarityCell = document.createElement('td');
+                    clarityCell.textContent = formatPercent(model.clarity);
+                    if (model.clarity === bestWorst.clarity.best) clarityCell.className = 'best';
+                    if (model.clarity === bestWorst.clarity.worst) clarityCell.className = 'worst';
+                    row.appendChild(clarityCell);
+                    
+                    // Helpfulness
+                    const helpfulnessCell = document.createElement('td');
+                    helpfulnessCell.textContent = formatPercent(model.helpfulness);
+                    if (model.helpfulness === bestWorst.helpfulness.best) helpfulnessCell.className = 'best';
+                    if (model.helpfulness === bestWorst.helpfulness.worst) helpfulnessCell.className = 'worst';
+                    row.appendChild(helpfulnessCell);
+                    
+                    // Overall
+                    const overallCell = document.createElement('td');
+                    overallCell.textContent = formatPercent(model.overall);
+                    if (model.overall === bestWorst.overall.best) overallCell.className = 'best';
+                    if (model.overall === bestWorst.overall.worst) overallCell.className = 'worst';
+                    row.appendChild(overallCell);
+                    
+                    // Hallucination
+                    const hallucinationCell = document.createElement('td');
+                    hallucinationCell.textContent = formatPercent(model.hallucination_score);
+                    if (model.hallucination_score === bestWorst.hallucination_score.best) hallucinationCell.className = 'best';
+                    if (model.hallucination_score === bestWorst.hallucination_score.worst) hallucinationCell.className = 'worst';
+                    row.appendChild(hallucinationCell);
+                    
+                    // Tool Calls
+                    const toolCallsCell = document.createElement('td');
+                    toolCallsCell.textContent = model.tool_calls || 0;
+                    row.appendChild(toolCallsCell);
+                    
+                    // Test Count
+                    const testCountCell = document.createElement('td');
+                    testCountCell.textContent = model.test_count || 'N/A';
+                    row.appendChild(testCountCell);
+                    
+                    tableBody.appendChild(row);
+                });
+            }
+            
+            // Create tables for each individual test
+            function createTestTables() {
+                const testResultsContainer = document.getElementById('test-results');
+                testResultsContainer.innerHTML = '';
+                
+                if (!jsonData.tests) return;
+                
+                // Process each test
+                Object.entries(jsonData.tests).forEach(([testName, testData]) => {
+                    if (!testData.models || Object.keys(testData.models).length === 0) return;
+                    
+                    // Create container for this test
+                    const testContainer = document.createElement('div');
+                    testContainer.className = 'container';
+                    
+                    // Add test header
+                    const testHeader = document.createElement('h2');
+                    testHeader.textContent = `Test: ${testName}`;
+                    testContainer.appendChild(testHeader);
+                    
+                    // Get models and calculate average scores
+                    const models = Object.entries(testData.models).map(([name, data]) => {
+                        const avgScore = calculateAverage([
+                            data.accuracy,
+                            data.tool_use,
+                            data.clarity,
+                            data.helpfulness,
+                            data.overall
+                        ]);
+                        
+                        return {
+                            name,
+                            avgScore,
+                            ...data
+                        };
+                    });
+                    
+                    // Sort by average score (highest first)
+                    models.sort((a, b) => b.avgScore - a.avgScore);
+                    
+                    // Get all values for each metric to determine best/worst
+                    const allValues = {
+                        avgScore: models.map(m => m.avgScore),
+                        accuracy: models.map(m => m.accuracy),
+                        tool_use: models.map(m => m.tool_use),
+                        clarity: models.map(m => m.clarity),
+                        helpfulness: models.map(m => m.helpfulness),
+                        overall: models.map(m => m.overall),
+                        hallucination_score: models.map(m => m.hallucination_score)
+                    };
+                    
+                    // Find best/worst values
+                    const bestWorst = {
+                        avgScore: findBestWorst(allValues.avgScore),
+                        accuracy: findBestWorst(allValues.accuracy),
+                        tool_use: findBestWorst(allValues.tool_use),
+                        clarity: findBestWorst(allValues.clarity),
+                        helpfulness: findBestWorst(allValues.helpfulness),
+                        overall: findBestWorst(allValues.overall),
+                        hallucination_score: findBestWorst(allValues.hallucination_score, false)
+                    };
+                    
+                    // Create table
+                    const table = document.createElement('table');
+                    
+                    // Create table header
+                    const thead = document.createElement('thead');
+                    const headerRow = document.createElement('tr');
+                    
+                    ['Rank', 'Model', 'Average Score', 'Accuracy', 'Tool Use', 'Clarity', 'Helpfulness', 
+                     'Overall', 'Hallucination', 'Tool Calls', 'Redundant Calls'].forEach(header => {
+                        const th = document.createElement('th');
+                        th.textContent = header;
+                        headerRow.appendChild(th);
+                    });
+                    
+                    thead.appendChild(headerRow);
+                    table.appendChild(thead);
+                    
+                    // Create table body
+                    const tbody = document.createElement('tbody');
+                    
+                    // Add rows for each model
+                    models.forEach((model, index) => {
+                        const row = document.createElement('tr');
+                        row.className = 'model-header';
+                        
+                        // Rank
+                        const rankCell = document.createElement('td');
+                        rankCell.textContent = index + 1;
+                        row.appendChild(rankCell);
+                        
+                        // Model name
+                        const nameCell = document.createElement('td');
+                        nameCell.textContent = model.name;
+                        row.appendChild(nameCell);
+                        
+                        // Average score
+                        const avgScoreCell = document.createElement('td');
+                        avgScoreCell.textContent = formatPercent(model.avgScore);
+                        if (model.avgScore === bestWorst.avgScore.best) avgScoreCell.className = 'best';
+                        if (model.avgScore === bestWorst.avgScore.worst) avgScoreCell.className = 'worst';
+                        row.appendChild(avgScoreCell);
+                        
+                        // Accuracy
+                        const accuracyCell = document.createElement('td');
+                        accuracyCell.textContent = formatPercent(model.accuracy);
+                        if (model.accuracy === bestWorst.accuracy.best) accuracyCell.className = 'best';
+                        if (model.accuracy === bestWorst.accuracy.worst) accuracyCell.className = 'worst';
+                        row.appendChild(accuracyCell);
+                        
+                        // Tool Use
+                        const toolUseCell = document.createElement('td');
+                        toolUseCell.textContent = formatPercent(model.tool_use);
+                        if (model.tool_use === bestWorst.tool_use.best) toolUseCell.className = 'best';
+                        if (model.tool_use === bestWorst.tool_use.worst) toolUseCell.className = 'worst';
+                        row.appendChild(toolUseCell);
+                        
+                        // Clarity
+                        const clarityCell = document.createElement('td');
+                        clarityCell.textContent = formatPercent(model.clarity);
+                        if (model.clarity === bestWorst.clarity.best) clarityCell.className = 'best';
+                        if (model.clarity === bestWorst.clarity.worst) clarityCell.className = 'worst';
+                        row.appendChild(clarityCell);
+                        
+                        // Helpfulness
+                        const helpfulnessCell = document.createElement('td');
+                        helpfulnessCell.textContent = formatPercent(model.helpfulness);
+                        if (model.helpfulness === bestWorst.helpfulness.best) helpfulnessCell.className = 'best';
+                        if (model.helpfulness === bestWorst.helpfulness.worst) helpfulnessCell.className = 'worst';
+                        row.appendChild(helpfulnessCell);
+                        
+                        // Overall
+                        const overallCell = document.createElement('td');
+                        overallCell.textContent = formatPercent(model.overall);
+                        if (model.overall === bestWorst.overall.best) overallCell.className = 'best';
+                        if (model.overall === bestWorst.overall.worst) overallCell.className = 'worst';
+                        row.appendChild(overallCell);
+                        
+                        // Hallucination
+                        const hallucinationCell = document.createElement('td');
+                        hallucinationCell.textContent = formatPercent(model.hallucination_score);
+                        if (model.hallucination_score === bestWorst.hallucination_score.best) hallucinationCell.className = 'best';
+                        if (model.hallucination_score === bestWorst.hallucination_score.worst) hallucinationCell.className = 'worst';
+                        row.appendChild(hallucinationCell);
+                        
+                        // Tool Calls
+                        const toolCallsCell = document.createElement('td');
+                        toolCallsCell.textContent = model.tool_calls || 0;
+                        row.appendChild(toolCallsCell);
+                        
+                        // Redundant Tool Calls
+                        const redundantCallsCell = document.createElement('td');
+                        redundantCallsCell.textContent = model.redundant_tool_calls || 0;
+                        row.appendChild(redundantCallsCell);
+                        
+                        tbody.appendChild(row);
+                        
+                        // Add false claims if any
+                        if (model.false_claims && model.false_claims.length > 0) {
+                            const claimsRow = document.createElement('tr');
+                            
+                            const claimsCell = document.createElement('td');
+                            claimsCell.colSpan = 11;
+                            claimsCell.className = 'hallucination-details';
+                            
+                            const claimsTitle = document.createElement('div');
+                            claimsTitle.textContent = 'False Claims:';
+                            claimsTitle.style.fontWeight = 'bold';
+                            claimsCell.appendChild(claimsTitle);
+                            
+                            const claimsList = document.createElement('ul');
+                            model.false_claims.forEach(claim => {
+                                const claimItem = document.createElement('li');
+                                claimItem.textContent = claim;
+                                claimsList.appendChild(claimItem);
+                            });
+                            claimsCell.appendChild(claimsList);
+                            
+                            claimsRow.appendChild(claimsCell);
+                            tbody.appendChild(claimsRow);
+                        }
+                    });
+                    
+                    table.appendChild(tbody);
+                    testContainer.appendChild(table);
+                    testResultsContainer.appendChild(testContainer);
+                });
+            }
             
             // Function to create the JSON tree view
             function createJsonTree(data, container) {
@@ -599,8 +1151,14 @@ def visualize_json(data, output_path=None):
                 });
             });
             
-            // Initially collapse all nodes except the first level
-            window.addEventListener('load', function() {
+            // Initialize the page
+            document.addEventListener('DOMContentLoaded', function() {
+                // Populate the comparison tables
+                populateOverallSummary();
+                populateOverallTable();
+                createTestTables();
+                
+                // Initially collapse all nodes except the first level in JSON view
                 const topLevelItems = treeContainer.querySelector('ul').children;
                 Array.from(topLevelItems).forEach(item => {
                     const collapsibles = item.querySelectorAll('.collapsible');
