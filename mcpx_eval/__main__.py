@@ -463,7 +463,8 @@ def visualize_json(data, output_path=None):
                         clarity: models.map(m => m.clarity),
                         helpfulness: models.map(m => m.helpfulness),
                         overall: models.map(m => m.overall),
-                        hallucination_score: models.map(m => m.hallucination_score)
+                        hallucination_score: models.map(m => m.hallucination_score),
+                        duration: models.map(m => m.duration)
                     };
                     
                     // Find best/worst values
@@ -474,7 +475,8 @@ def visualize_json(data, output_path=None):
                         clarity: findBestWorst(allValues.clarity),
                         helpfulness: findBestWorst(allValues.helpfulness),
                         overall: findBestWorst(allValues.overall),
-                        hallucination_score: findBestWorst(allValues.hallucination_score, false)
+                        hallucination_score: findBestWorst(allValues.hallucination_score, false),
+                        duration: findBestWorst(allValues.duration, false)
                     };
                     
                     // Create table
@@ -577,6 +579,10 @@ def visualize_json(data, output_path=None):
                         // Duration
                         const durationCell = document.createElement('td');
                         durationCell.textContent = (model.duration || 0).toFixed(1);
+                        if (model.duration === bestWorst.duration.best) durationCell.className = 'best';
+                        else if (bestWorst.duration.best !== bestWorst.duration.worst && 
+                                model.duration === bestWorst.duration.worst &&
+                                (model.duration - bestWorst.duration.best) > 0.9) durationCell.className = 'worst';
                         row.appendChild(durationCell);
 
                         // Tool Calls
