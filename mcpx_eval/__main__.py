@@ -305,21 +305,6 @@ def visualize_json(data, output_path=None):
                 font-size: 0.9em;
                 color: #cc0000;
             }
-            .tab-container {
-                margin-bottom: 30px;
-            }
-            .tabs {
-                display: flex;
-                border-bottom: 1px solid #ddd;
-                margin-bottom: 20px;
-            }
-            .tab {
-                padding: 10px 20px;
-                background-color: #4CAF50;
-                color: white;
-                margin-right: 5px;
-                border-radius: 5px 5px 0 0;
-            }
             .summary-card {
                 background-color: white;
                 border-radius: 5px;
@@ -350,12 +335,7 @@ def visualize_json(data, output_path=None):
         <h1>MCPX Evaluation JSON Visualization</h1>
         <div class="timestamp">Generated on: """ + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + """</div>
         
-        <div class="tab-container">
-            <div class="tabs">
-                <div class="tab active">Model Comparison</div>
-            </div>
-            
-            <div id="comparison-tab">
+        <div id="comparison-tab">
                 <!-- Overall Summary -->
                 <div class="container">
                     <h2>Overall Summary</h2>
