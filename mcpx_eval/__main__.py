@@ -168,6 +168,25 @@ def visualize_json(data, output_path=None):
             th {
                 background-color: #f2f2f2;
                 font-weight: bold;
+                cursor: pointer;
+                position: relative;
+            }
+            th:hover {
+                background-color: #e6e6e6;
+            }
+            th::after {
+                content: '↕';
+                position: absolute;
+                right: 8px;
+                opacity: 0.5;
+            }
+            th.asc::after {
+                content: '↑';
+                opacity: 1;
+            }
+            th.desc::after {
+                content: '↓';
+                opacity: 1;
             }
             tr:nth-child(even) {
                 background-color: #f9f9f9;
@@ -606,6 +625,67 @@ def visualize_json(data, output_path=None):
                 });
             }
             
+            // Sort table by column
+            function sortTable(table, columnIndex, asc = true) {
+                const tbody = table.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                
+                // Clear all sort indicators
+                table.querySelectorAll('th').forEach(th => {
+                    th.classList.remove('asc', 'desc');
+                });
+                
+                // Add sort indicator to current column
+                const th = table.querySelectorAll('th')[columnIndex];
+                th.classList.add(asc ? 'asc' : 'desc');
+                
+                // Sort rows
+                const sortedRows = rows.sort((a, b) => {
+                    const aCol = a.querySelectorAll('td')[columnIndex];
+                    const bCol = b.querySelectorAll('td')[columnIndex];
+                    
+                    let aValue = aCol.textContent.trim();
+                    let bValue = bCol.textContent.trim();
+                    
+                    // Convert percentage strings to numbers
+                    if (aValue.endsWith('%')) {
+                        aValue = parseFloat(aValue);
+                        bValue = parseFloat(bValue);
+                    }
+                    // Convert numeric strings to numbers
+                    else if (!isNaN(aValue)) {
+                        aValue = parseFloat(aValue);
+                        bValue = parseFloat(bValue);
+                    }
+                    
+                    if (aValue < bValue) return asc ? -1 : 1;
+                    if (aValue > bValue) return asc ? 1 : -1;
+                    return 0;
+                });
+                
+                // Update row order
+                tbody.innerHTML = '';
+                sortedRows.forEach(row => tbody.appendChild(row));
+                
+                // Update ranks if sorting by a metric column
+                if (columnIndex > 1) {
+                    sortedRows.forEach((row, index) => {
+                        row.querySelector('td').textContent = index + 1;
+                    });
+                }
+            }
+
+            // Add click handlers to table headers
+            function addTableSorting(table) {
+                const headers = table.querySelectorAll('th');
+                headers.forEach((header, index) => {
+                    header.addEventListener('click', () => {
+                        const isAsc = !header.classList.contains('asc');
+                        sortTable(table, index, isAsc);
+                    });
+                });
+            }
+
             // Initialize the page
             document.addEventListener('DOMContentLoaded', function() {
                 // Only show overall rankings if there is more than one test
@@ -613,9 +693,14 @@ def visualize_json(data, output_path=None):
                 if (testCount > 1) {
                     document.getElementById('overall-rankings').style.display = 'block';
                     populateOverallTable();
+                    addTableSorting(document.getElementById('overall-table'));
                 }
                 
                 createTestTables();
+                // Add sorting to all test tables
+                document.querySelectorAll('#test-results table').forEach(table => {
+                    addTableSorting(table);
+                });
             });
         </script>
     </body>
