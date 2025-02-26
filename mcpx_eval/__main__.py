@@ -215,6 +215,7 @@ def visualize_json(data, output_path=None):
                                     <th>Overall</th>
                                     <th>Hallucination</th>
                                     <th>Tool Calls</th>
+                                    <th>Duration (s)</th>
                                     <th>Tests</th>
                                 </tr>
                             </thead>
@@ -394,6 +395,11 @@ def visualize_json(data, output_path=None):
                     toolCallsCell.textContent = model.tool_calls || 0;
                     row.appendChild(toolCallsCell);
                     
+                    // Duration
+                    const durationCell = document.createElement('td');
+                    durationCell.textContent = model.duration ? model.duration.toFixed(1) : 'N/A';
+                    row.appendChild(durationCell);
+
                     // Test Count
                     const testCountCell = document.createElement('td');
                     testCountCell.textContent = model.test_count || 'N/A';
@@ -473,7 +479,7 @@ def visualize_json(data, output_path=None):
                     const headerRow = document.createElement('tr');
                     
                     ['Rank', 'Model', 'Average Score', 'Accuracy', 'Tool Use', 'Clarity', 'Helpfulness', 
-                     'Overall', 'Hallucination', 'Tool Calls', 'Redundant Calls'].forEach(header => {
+                     'Overall', 'Hallucination', 'Tool Calls', 'Duration (s)', 'Redundant Calls'].forEach(header => {
                         const th = document.createElement('th');
                         th.textContent = header;
                         headerRow.appendChild(th);
@@ -561,6 +567,11 @@ def visualize_json(data, output_path=None):
                         toolCallsCell.textContent = model.tool_calls || 0;
                         row.appendChild(toolCallsCell);
                         
+                        // Duration
+                        const durationCell = document.createElement('td');
+                        durationCell.textContent = model.duration ? model.duration.toFixed(1) : 'N/A';
+                        row.appendChild(durationCell);
+
                         // Redundant Tool Calls
                         const redundantCallsCell = document.createElement('td');
                         redundantCallsCell.textContent = model.redundant_tool_calls || 0;
