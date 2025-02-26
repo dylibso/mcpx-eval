@@ -103,7 +103,7 @@ def json_summary(args):
         print(formatted_json)
 
     # If visualization is requested, create and open it
-    if args.visualize:
+    if args.show:
         visualize_json(summary, args.viz_output)
 
 
@@ -779,8 +779,8 @@ async def run():
         help="Output JSON file path (default: print to stdout)",
     )
     json_parser.add_argument(
-        "--visualize",
-        "-v",
+        "--show",
+        "-s",
         action="store_true",
         help="Create an interactive HTML visualization of the JSON data",
     )
@@ -927,7 +927,7 @@ def main():
     print("\nUsage examples:")
     print("  Generate JSON summary:                uv run python -m mcpx_eval json")
     print(
-        "  Generate and visualize JSON:          uv run python -m mcpx_eval json --visualize"
+        "  Generate and visualize JSON:          uv run python -m mcpx_eval json --show"
     )
     print(
         "  Save JSON to file:                    uv run python -m mcpx_eval json -o results.json"
