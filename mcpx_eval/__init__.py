@@ -1,6 +1,10 @@
 import logging
+import sqlite3
+import tomllib
+import os
 from datetime import datetime, timedelta
 import json
+from typing import List
 
 from mcpx_pydantic_ai import Agent
 from mcpx_py import Ollama, Claude, Gemini, OpenAI, ChatConfig, Chat
@@ -65,12 +69,6 @@ You are a helpful AI assistant with access to various external tools and APIs. Y
 
 Your responses should focus on results rather than asking questions. Only ask the user for clarification if the task itself is unclear or impossible with the tools available.
 """
-
-
-@dataclass
-class Model:
-    name: str
-    config: ChatConfig
 
 
 class Database:
