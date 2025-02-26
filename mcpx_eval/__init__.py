@@ -614,8 +614,9 @@ class Judge:
                     }
                 )
             tt = datetime.now() - start
+            duration_seconds = tt.total_seconds()
             t += tt
-            result["duration"] = f"{t.total_seconds()}s"
+            result["duration"] = f"{duration_seconds}s"
 
             data = json.dumps(result)
 
@@ -665,9 +666,10 @@ incorrect information, or made-up facts in the response and list them in the fal
             # Add additional metrics to the score
             score_data = res.data
 
-            # Add tool analysis metrics
+            # Add tool analysis metrics and duration
             score_data.tool_analysis = tool_analysis
             score_data.redundant_tool_calls = redundant_tool_calls
+            score_data.duration = duration_seconds
 
             m.append(score_data)
         return Results(scores=m, duration=t.total_seconds())
