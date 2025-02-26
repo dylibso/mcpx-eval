@@ -11,3 +11,6 @@ wheels/
 
 # sqlite3
 *.db
+
+# aider
+.aider*
