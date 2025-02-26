@@ -302,6 +302,330 @@ def json_summary(args):
         print(f"JSON summary saved to {args.output}")
     else:
         print(formatted_json)
+    
+    # If visualization is requested, create and open it
+    if args.visualize:
+        visualize_json(summary, args.viz_output)
+
+def visualize_json(data, output_path=None):
+    """Create an interactive HTML visualization of JSON data"""
+    import json
+    import webbrowser
+    from tempfile import NamedTemporaryFile
+    from datetime import datetime
+    
+    # Create HTML content with JSON viewer
+    html = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>MCPX Evaluation JSON Visualization</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+                max-width: 1200px;
+                margin: 0 auto;
+                background-color: #f5f5f5;
+            }
+            h1 {
+                color: #333;
+                text-align: center;
+                margin-bottom: 30px;
+            }
+            .container {
+                background-color: white;
+                padding: 20px;
+                border-radius: 5px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }
+            .timestamp {
+                text-align: center;
+                color: #777;
+                font-size: 0.9em;
+                margin-bottom: 20px;
+            }
+            /* JSON Tree Viewer Styles */
+            .json-tree {
+                font-family: monospace;
+                font-size: 14px;
+                line-height: 1.4;
+            }
+            .json-tree ul {
+                list-style: none;
+                margin: 0;
+                padding: 0 0 0 20px;
+            }
+            .json-tree li {
+                position: relative;
+            }
+            .json-key {
+                color: #881391;
+                font-weight: bold;
+            }
+            .json-string {
+                color: #1a1aa6;
+            }
+            .json-number {
+                color: #1e7f1e;
+            }
+            .json-boolean {
+                color: #994500;
+            }
+            .json-null {
+                color: #7f7f7f;
+            }
+            .collapsible {
+                cursor: pointer;
+                user-select: none;
+            }
+            .collapsible::before {
+                content: "▼";
+                display: inline-block;
+                margin-right: 5px;
+                transition: transform 0.2s;
+            }
+            .collapsed::before {
+                transform: rotate(-90deg);
+            }
+            .collapsed + ul {
+                display: none;
+            }
+            .search-container {
+                margin-bottom: 20px;
+                text-align: center;
+            }
+            #search-input {
+                padding: 8px;
+                width: 300px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+            }
+            .highlight {
+                background-color: yellow;
+            }
+            .controls {
+                margin-bottom: 20px;
+                text-align: center;
+            }
+            button {
+                padding: 8px 12px;
+                margin: 0 5px;
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+            button:hover {
+                background-color: #45a049;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>MCPX Evaluation JSON Visualization</h1>
+        <div class="timestamp">Generated on: """ + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + """</div>
+        
+        <div class="controls">
+            <button id="expand-all">Expand All</button>
+            <button id="collapse-all">Collapse All</button>
+        </div>
+        
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search in JSON...">
+        </div>
+        
+        <div class="container">
+            <div id="json-tree" class="json-tree"></div>
+        </div>
+        
+        <script>
+            // The JSON data
+            const jsonData = """ + json.dumps(data) + """;
+            
+            // Function to create the JSON tree view
+            function createJsonTree(data, container) {
+                const ul = document.createElement('ul');
+                
+                if (Array.isArray(data)) {
+                    // Handle array
+                    for (let i = 0; i < data.length; i++) {
+                        const li = document.createElement('li');
+                        
+                        if (typeof data[i] === 'object' && data[i] !== null) {
+                            const span = document.createElement('span');
+                            span.className = 'collapsible';
+                            span.innerHTML = `<span class="json-key">[${i}]</span>: `;
+                            span.onclick = toggleCollapse;
+                            li.appendChild(span);
+                            
+                            createJsonTree(data[i], li);
+                        } else {
+                            li.innerHTML = `<span class="json-key">[${i}]</span>: ${formatValue(data[i])}`;
+                        }
+                        
+                        ul.appendChild(li);
+                    }
+                } else if (typeof data === 'object' && data !== null) {
+                    // Handle object
+                    for (const key in data) {
+                        if (data.hasOwnProperty(key)) {
+                            const li = document.createElement('li');
+                            
+                            if (typeof data[key] === 'object' && data[key] !== null) {
+                                const span = document.createElement('span');
+                                span.className = 'collapsible';
+                                span.innerHTML = `<span class="json-key">${key}</span>: `;
+                                span.onclick = toggleCollapse;
+                                li.appendChild(span);
+                                
+                                createJsonTree(data[key], li);
+                            } else {
+                                li.innerHTML = `<span class="json-key">${key}</span>: ${formatValue(data[key])}`;
+                            }
+                            
+                            ul.appendChild(li);
+                        }
+                    }
+                }
+                
+                container.appendChild(ul);
+            }
+            
+            // Format values with appropriate styling
+            function formatValue(value) {
+                if (typeof value === 'string') {
+                    return `<span class="json-string">"${escapeHtml(value)}"</span>`;
+                } else if (typeof value === 'number') {
+                    return `<span class="json-number">${value}</span>`;
+                } else if (typeof value === 'boolean') {
+                    return `<span class="json-boolean">${value}</span>`;
+                } else if (value === null) {
+                    return `<span class="json-null">null</span>`;
+                }
+                return escapeHtml(String(value));
+            }
+            
+            // Escape HTML special characters
+            function escapeHtml(text) {
+                return text
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+            
+            // Toggle collapse/expand
+            function toggleCollapse(event) {
+                this.classList.toggle('collapsed');
+                event.stopPropagation();
+            }
+            
+            // Initialize the tree
+            const treeContainer = document.getElementById('json-tree');
+            createJsonTree(jsonData, treeContainer);
+            
+            // Search functionality
+            const searchInput = document.getElementById('search-input');
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                clearHighlights();
+                
+                if (searchTerm.length > 0) {
+                    searchInTree(treeContainer, searchTerm);
+                }
+            });
+            
+            function clearHighlights() {
+                const highlights = document.querySelectorAll('.highlight');
+                highlights.forEach(el => {
+                    el.classList.remove('highlight');
+                });
+            }
+            
+            function searchInTree(element, term) {
+                let found = false;
+                
+                // Check text content
+                if (element.textContent.toLowerCase().includes(term)) {
+                    found = true;
+                    
+                    // Highlight the key or value that contains the search term
+                    const keys = element.querySelectorAll('.json-key');
+                    const values = element.querySelectorAll('.json-string, .json-number, .json-boolean, .json-null');
+                    
+                    [...keys, ...values].forEach(el => {
+                        if (el.textContent.toLowerCase().includes(term)) {
+                            el.classList.add('highlight');
+                            
+                            // Expand parents
+                            let parent = el.parentElement;
+                            while (parent) {
+                                if (parent.previousElementSibling && 
+                                    parent.previousElementSibling.classList.contains('collapsible')) {
+                                    parent.previousElementSibling.classList.remove('collapsed');
+                                }
+                                parent = parent.parentElement;
+                            }
+                        }
+                    });
+                }
+                
+                // Recursively search in children
+                Array.from(element.children).forEach(child => {
+                    if (searchInTree(child, term)) {
+                        found = true;
+                    }
+                });
+                
+                return found;
+            }
+            
+            // Expand/Collapse All buttons
+            document.getElementById('expand-all').addEventListener('click', function() {
+                const collapsibles = document.querySelectorAll('.collapsible');
+                collapsibles.forEach(el => {
+                    el.classList.remove('collapsed');
+                });
+            });
+            
+            document.getElementById('collapse-all').addEventListener('click', function() {
+                const collapsibles = document.querySelectorAll('.collapsible');
+                collapsibles.forEach(el => {
+                    el.classList.add('collapsed');
+                });
+            });
+            
+            // Initially collapse all nodes except the first level
+            window.addEventListener('load', function() {
+                const topLevelItems = treeContainer.querySelector('ul').children;
+                Array.from(topLevelItems).forEach(item => {
+                    const collapsibles = item.querySelectorAll('.collapsible');
+                    Array.from(collapsibles).slice(1).forEach(el => {
+                        el.classList.add('collapsed');
+                    });
+                });
+            });
+        </script>
+    </body>
+    </html>
+    """
+    
+    # Write to temporary file and open in browser
+    with NamedTemporaryFile(suffix='.html', delete=False, mode='w') as f:
+        f.write(html)
+        temp_path = f.name
+    
+    print(f"Opening JSON visualization in web browser...")
+    webbrowser.open(f"file://{temp_path}")
+    
+    # Also save a copy to the specified location if provided
+    if output_path:
+        with open(output_path, 'w') as f:
+            f.write(html)
+        print(f"JSON visualization saved to {output_path}")
 
 def display_visualization(args):
     """Display a visualization in a web browser"""
@@ -563,6 +887,28 @@ async def run():
         "-o",
         help="Output JSON file path (default: print to stdout)",
     )
+    json_parser.add_argument(
+        "--visualize",
+        "-v",
+        action="store_true",
+        help="Create an interactive HTML visualization of the JSON data",
+    )
+    json_parser.add_argument(
+        "--viz-output",
+        help="Output path for HTML visualization (optional)",
+    )
+    
+    # JSON visualization command (standalone)
+    viz_json_parser = subparsers.add_parser("viz-json", help="Visualize JSON data from a file")
+    viz_json_parser.add_argument(
+        "input",
+        help="Input JSON file path",
+    )
+    viz_json_parser.add_argument(
+        "--output",
+        "-o",
+        help="Output HTML file path (optional)",
+    )
 
     # Visualization commands
     viz_parser = subparsers.add_parser("viz", help="Visualization subcommands")
@@ -661,6 +1007,20 @@ async def run():
     elif command == "json":
         json_summary(args)
         return
+        
+    # JSON visualization command
+    elif command == "viz-json":
+        import json
+        try:
+            with open(args.input, 'r') as f:
+                data = json.load(f)
+            visualize_json(data, args.output)
+        except FileNotFoundError:
+            print(f"Error: File '{args.input}' not found.")
+            return
+        except json.JSONDecodeError:
+            print(f"Error: '{args.input}' is not a valid JSON file.")
+            return
 
     # Test command (default)
     else:
