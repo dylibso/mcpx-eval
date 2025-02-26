@@ -198,11 +198,37 @@ def generate_table(args):
 
 
 def json_summary(args):
-    """Generate a JSON summary of all test data"""
+    """Generate a JSON summary of test data"""
     import json
     
     db = Database()
     summary = db.generate_json_summary()
+
+    # Filter to specific test if requested
+    if args.name:
+        if args.name in summary["tests"]:
+            filtered_summary = {
+                "tests": {
+                    args.name: summary["tests"][args.name]
+                },
+                "total": {
+                    "models": {},
+                    "metrics": summary["tests"][args.name]["metrics"],
+                    "test_count": 1,
+                    "model_count": summary["tests"][args.name]["model_count"]
+                },
+                "generated_at": summary["generated_at"]
+            }
+            # Include only models that participated in this test
+            for model_name, model_data in summary["total"]["models"].items():
+                if model_name in summary["tests"][args.name]["models"]:
+                    filtered_summary["total"]["models"][model_name] = {
+                        **model_data,
+                        "test_count": 1
+                    }
+            summary = filtered_summary
+        else:
+            print(f"Warning: Test '{args.name}' not found in results")
     
     # Format JSON with indentation for readability
     formatted_json = json.dumps(summary, indent=2)
@@ -774,6 +800,11 @@ async def run():
     
     # JSON summary command
     json_parser = subparsers.add_parser("json", help="Generate JSON summary of all test data")
+    json_parser.add_argument(
+        "--name",
+        "-n",
+        help="Filter results to a specific test name",
+    )
     json_parser.add_argument(
         "--output",
         "-o",
