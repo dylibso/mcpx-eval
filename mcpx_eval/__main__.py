@@ -653,64 +653,57 @@ def visualize_json(data, output_path=None):
                     // Average score
                     const avgScoreCell = document.createElement('td');
                     avgScoreCell.textContent = formatPercent(model.avgScore);
-                    if (bestWorst.avgScore.best !== bestWorst.avgScore.worst) {
-                        if (model.avgScore === bestWorst.avgScore.best) avgScoreCell.className = 'best';
-                        if (model.avgScore === bestWorst.avgScore.worst) avgScoreCell.className = 'worst';
-                    }
+                    if (model.avgScore === bestWorst.avgScore.best) avgScoreCell.className = 'best';
+                    else if (bestWorst.avgScore.best !== bestWorst.avgScore.worst && 
+                            model.avgScore === bestWorst.avgScore.worst) avgScoreCell.className = 'worst';
                     row.appendChild(avgScoreCell);
                     
                     // Accuracy
                     const accuracyCell = document.createElement('td');
                     accuracyCell.textContent = formatPercent(model.accuracy);
-                    if (bestWorst.accuracy.best !== bestWorst.accuracy.worst) {
-                        if (model.accuracy === bestWorst.accuracy.best) accuracyCell.className = 'best';
-                        if (model.accuracy === bestWorst.accuracy.worst) accuracyCell.className = 'worst';
-                    }
+                    if (model.accuracy === bestWorst.accuracy.best) accuracyCell.className = 'best';
+                    else if (bestWorst.accuracy.best !== bestWorst.accuracy.worst && 
+                            model.accuracy === bestWorst.accuracy.worst) accuracyCell.className = 'worst';
                     row.appendChild(accuracyCell);
                     
                     // Tool Use
                     const toolUseCell = document.createElement('td');
                     toolUseCell.textContent = formatPercent(model.tool_use);
-                    if (bestWorst.tool_use.best !== bestWorst.tool_use.worst) {
-                        if (model.tool_use === bestWorst.tool_use.best) toolUseCell.className = 'best';
-                        if (model.tool_use === bestWorst.tool_use.worst) toolUseCell.className = 'worst';
-                    }
+                    if (model.tool_use === bestWorst.tool_use.best) toolUseCell.className = 'best';
+                    else if (bestWorst.tool_use.best !== bestWorst.tool_use.worst && 
+                            model.tool_use === bestWorst.tool_use.worst) toolUseCell.className = 'worst';
                     row.appendChild(toolUseCell);
                     
                     // Clarity
                     const clarityCell = document.createElement('td');
                     clarityCell.textContent = formatPercent(model.clarity);
-                    if (bestWorst.clarity.best !== bestWorst.clarity.worst) {
-                        if (model.clarity === bestWorst.clarity.best) clarityCell.className = 'best';
-                        if (model.clarity === bestWorst.clarity.worst) clarityCell.className = 'worst';
-                    }
+                    if (model.clarity === bestWorst.clarity.best) clarityCell.className = 'best';
+                    else if (bestWorst.clarity.best !== bestWorst.clarity.worst && 
+                            model.clarity === bestWorst.clarity.worst) clarityCell.className = 'worst';
                     row.appendChild(clarityCell);
                     
                     // Helpfulness
                     const helpfulnessCell = document.createElement('td');
                     helpfulnessCell.textContent = formatPercent(model.helpfulness);
-                    if (bestWorst.helpfulness.best !== bestWorst.helpfulness.worst) {
-                        if (model.helpfulness === bestWorst.helpfulness.best) helpfulnessCell.className = 'best';
-                        if (model.helpfulness === bestWorst.helpfulness.worst) helpfulnessCell.className = 'worst';
-                    }
+                    if (model.helpfulness === bestWorst.helpfulness.best) helpfulnessCell.className = 'best';
+                    else if (bestWorst.helpfulness.best !== bestWorst.helpfulness.worst && 
+                            model.helpfulness === bestWorst.helpfulness.worst) helpfulnessCell.className = 'worst';
                     row.appendChild(helpfulnessCell);
                     
                     // Overall
                     const overallCell = document.createElement('td');
                     overallCell.textContent = formatPercent(model.overall);
-                    if (bestWorst.overall.best !== bestWorst.overall.worst) {
-                        if (model.overall === bestWorst.overall.best) overallCell.className = 'best';
-                        if (model.overall === bestWorst.overall.worst) overallCell.className = 'worst';
-                    }
+                    if (model.overall === bestWorst.overall.best) overallCell.className = 'best';
+                    else if (bestWorst.overall.best !== bestWorst.overall.worst && 
+                            model.overall === bestWorst.overall.worst) overallCell.className = 'worst';
                     row.appendChild(overallCell);
                     
                     // Hallucination
                     const hallucinationCell = document.createElement('td');
                     hallucinationCell.textContent = formatPercent(model.hallucination_score);
-                    if (bestWorst.hallucination_score.best !== bestWorst.hallucination_score.worst) {
-                        if (model.hallucination_score === bestWorst.hallucination_score.best) hallucinationCell.className = 'best';
-                        if (model.hallucination_score === bestWorst.hallucination_score.worst) hallucinationCell.className = 'worst';
-                    }
+                    if (model.hallucination_score === bestWorst.hallucination_score.best) hallucinationCell.className = 'best';
+                    else if (bestWorst.hallucination_score.best !== bestWorst.hallucination_score.worst && 
+                            model.hallucination_score === bestWorst.hallucination_score.worst) hallucinationCell.className = 'worst';
                     row.appendChild(hallucinationCell);
                     
                     // Tool Calls
@@ -827,64 +820,57 @@ def visualize_json(data, output_path=None):
                         // Average score
                         const avgScoreCell = document.createElement('td');
                         avgScoreCell.textContent = formatPercent(model.avgScore);
-                        if (bestWorst.avgScore.best !== bestWorst.avgScore.worst) {
-                            if (model.avgScore === bestWorst.avgScore.best) avgScoreCell.className = 'best';
-                            if (model.avgScore === bestWorst.avgScore.worst) avgScoreCell.className = 'worst';
-                        }
+                        if (model.avgScore === bestWorst.avgScore.best) avgScoreCell.className = 'best';
+                        else if (bestWorst.avgScore.best !== bestWorst.avgScore.worst && 
+                                model.avgScore === bestWorst.avgScore.worst) avgScoreCell.className = 'worst';
                         row.appendChild(avgScoreCell);
                         
                         // Accuracy
                         const accuracyCell = document.createElement('td');
                         accuracyCell.textContent = formatPercent(model.accuracy);
-                        if (bestWorst.accuracy.best !== bestWorst.accuracy.worst) {
-                            if (model.accuracy === bestWorst.accuracy.best) accuracyCell.className = 'best';
-                            if (model.accuracy === bestWorst.accuracy.worst) accuracyCell.className = 'worst';
-                        }
+                        if (model.accuracy === bestWorst.accuracy.best) accuracyCell.className = 'best';
+                        else if (bestWorst.accuracy.best !== bestWorst.accuracy.worst && 
+                                model.accuracy === bestWorst.accuracy.worst) accuracyCell.className = 'worst';
                         row.appendChild(accuracyCell);
                         
                         // Tool Use
                         const toolUseCell = document.createElement('td');
                         toolUseCell.textContent = formatPercent(model.tool_use);
-                        if (bestWorst.tool_use.best !== bestWorst.tool_use.worst) {
-                            if (model.tool_use === bestWorst.tool_use.best) toolUseCell.className = 'best';
-                            if (model.tool_use === bestWorst.tool_use.worst) toolUseCell.className = 'worst';
-                        }
+                        if (model.tool_use === bestWorst.tool_use.best) toolUseCell.className = 'best';
+                        else if (bestWorst.tool_use.best !== bestWorst.tool_use.worst && 
+                                model.tool_use === bestWorst.tool_use.worst) toolUseCell.className = 'worst';
                         row.appendChild(toolUseCell);
                         
                         // Clarity
                         const clarityCell = document.createElement('td');
                         clarityCell.textContent = formatPercent(model.clarity);
-                        if (bestWorst.clarity.best !== bestWorst.clarity.worst) {
-                            if (model.clarity === bestWorst.clarity.best) clarityCell.className = 'best';
-                            if (model.clarity === bestWorst.clarity.worst) clarityCell.className = 'worst';
-                        }
+                        if (model.clarity === bestWorst.clarity.best) clarityCell.className = 'best';
+                        else if (bestWorst.clarity.best !== bestWorst.clarity.worst && 
+                                model.clarity === bestWorst.clarity.worst) clarityCell.className = 'worst';
                         row.appendChild(clarityCell);
                         
                         // Helpfulness
                         const helpfulnessCell = document.createElement('td');
                         helpfulnessCell.textContent = formatPercent(model.helpfulness);
-                        if (bestWorst.helpfulness.best !== bestWorst.helpfulness.worst) {
-                            if (model.helpfulness === bestWorst.helpfulness.best) helpfulnessCell.className = 'best';
-                            if (model.helpfulness === bestWorst.helpfulness.worst) helpfulnessCell.className = 'worst';
-                        }
+                        if (model.helpfulness === bestWorst.helpfulness.best) helpfulnessCell.className = 'best';
+                        else if (bestWorst.helpfulness.best !== bestWorst.helpfulness.worst && 
+                                model.helpfulness === bestWorst.helpfulness.worst) helpfulnessCell.className = 'worst';
                         row.appendChild(helpfulnessCell);
                         
                         // Overall
                         const overallCell = document.createElement('td');
                         overallCell.textContent = formatPercent(model.overall);
-                        if (bestWorst.overall.best !== bestWorst.overall.worst) {
-                            if (model.overall === bestWorst.overall.best) overallCell.className = 'best';
-                            if (model.overall === bestWorst.overall.worst) overallCell.className = 'worst';
-                        }
+                        if (model.overall === bestWorst.overall.best) overallCell.className = 'best';
+                        else if (bestWorst.overall.best !== bestWorst.overall.worst && 
+                                model.overall === bestWorst.overall.worst) overallCell.className = 'worst';
                         row.appendChild(overallCell);
                         
                         // Hallucination
                         const hallucinationCell = document.createElement('td');
                         hallucinationCell.textContent = formatPercent(model.hallucination_score);
-                        if (bestWorst.hallucination_score.best !== bestWorst.hallucination_score.worst) {
-                            if (model.hallucination_score === bestWorst.hallucination_score.best) hallucinationCell.className = 'best';
-                            if (model.hallucination_score === bestWorst.hallucination_score.worst) hallucinationCell.className = 'worst';
-                        }
+                        if (model.hallucination_score === bestWorst.hallucination_score.best) hallucinationCell.className = 'best';
+                        else if (bestWorst.hallucination_score.best !== bestWorst.hallucination_score.worst && 
+                                model.hallucination_score === bestWorst.hallucination_score.worst) hallucinationCell.className = 'worst';
                         row.appendChild(hallucinationCell);
                         
                         // Tool Calls
