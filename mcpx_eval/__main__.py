@@ -544,8 +544,8 @@ def visualize_json(data, output_path=None):
                         avgScoreCell.textContent = formatPercent(model.avgScore);
                         if (model.avgScore === bestWorst.avgScore.best) avgScoreCell.className = 'best';
                         else if (bestWorst.avgScore.best !== bestWorst.avgScore.worst && 
-                                model.avgScore === bestWorst.avgScore.worst && 
-                                model.avgScore < 30) avgScoreCell.className = 'worst';
+                                model.avgScore === bestWorst.avgScore.worst &&
+                                (bestWorst.avgScore.best - model.avgScore) >= 30) avgScoreCell.className = 'worst';
                         row.appendChild(avgScoreCell);
                         
                         // Accuracy
