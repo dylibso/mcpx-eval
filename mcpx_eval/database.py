@@ -1,7 +1,7 @@
 import sqlite3
 import json
 from datetime import datetime
-from .models import Score, Results
+from .models import Score, Results, Test
 
 class Database:
     conn: sqlite3.Connection
