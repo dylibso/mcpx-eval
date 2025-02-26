@@ -300,6 +300,7 @@ def json_summary(args):
         with open(args.output, 'w') as f:
             f.write(formatted_json)
         print(f"JSON summary saved to {args.output}")
+        print(f"To visualize this file, run: uv run python -m mcpx_eval viz-json {args.output}")
     else:
         print(formatted_json)
     
@@ -626,6 +627,7 @@ def visualize_json(data, output_path=None):
         with open(output_path, 'w') as f:
             f.write(html)
         print(f"JSON visualization saved to {output_path}")
+        print(f"To view this visualization again later, open the file in your browser.")
 
 def display_visualization(args):
     """Display a visualization in a web browser"""
@@ -1017,6 +1019,7 @@ async def run():
             visualize_json(data, args.output)
         except FileNotFoundError:
             print(f"Error: File '{args.input}' not found.")
+            print(f"Generate a JSON file first with: uv run python -m mcpx_eval json -o {args.input}")
             return
         except json.JSONDecodeError:
             print(f"Error: '{args.input}' is not a valid JSON file.")
@@ -1080,6 +1083,14 @@ async def run():
 
 def main():
     asyncio.run(run())
+    
+    # Print helpful usage examples at the end
+    print("\nUsage examples:")
+    print("  Generate JSON summary:                uv run python -m mcpx_eval json")
+    print("  Generate and visualize JSON:          uv run python -m mcpx_eval json --visualize")
+    print("  Save JSON to file:                    uv run python -m mcpx_eval json -o results.json")
+    print("  Visualize existing JSON file:         uv run python -m mcpx_eval viz-json results.json")
+    print("  Save visualization to HTML:           uv run python -m mcpx_eval viz-json results.json -o viz.html")
 
 
 if __name__ == "__main__":
