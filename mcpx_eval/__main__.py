@@ -315,95 +315,10 @@ def visualize_json(data, output_path=None):
             }
             .tab {
                 padding: 10px 20px;
-                cursor: pointer;
-                background-color: #f2f2f2;
+                background-color: #4CAF50;
+                color: white;
                 margin-right: 5px;
                 border-radius: 5px 5px 0 0;
-            }
-            .tab.active {
-                background-color: #4CAF50;
-                color: white;
-            }
-            .tab-content {
-                display: none;
-            }
-            .tab-content.active {
-                display: block;
-            }
-            /* JSON Tree Viewer Styles */
-            .json-tree {
-                font-family: monospace;
-                font-size: 14px;
-                line-height: 1.4;
-            }
-            .json-tree ul {
-                list-style: none;
-                margin: 0;
-                padding: 0 0 0 20px;
-            }
-            .json-tree li {
-                position: relative;
-            }
-            .json-key {
-                color: #881391;
-                font-weight: bold;
-            }
-            .json-string {
-                color: #1a1aa6;
-            }
-            .json-number {
-                color: #1e7f1e;
-            }
-            .json-boolean {
-                color: #994500;
-            }
-            .json-null {
-                color: #7f7f7f;
-            }
-            .collapsible {
-                cursor: pointer;
-                user-select: none;
-            }
-            .collapsible::before {
-                content: "▼";
-                display: inline-block;
-                margin-right: 5px;
-                transition: transform 0.2s;
-            }
-            .collapsed::before {
-                transform: rotate(-90deg);
-            }
-            .collapsed + ul {
-                display: none;
-            }
-            .search-container {
-                margin-bottom: 20px;
-                text-align: center;
-            }
-            #search-input {
-                padding: 8px;
-                width: 300px;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-            }
-            .highlight {
-                background-color: yellow;
-            }
-            .controls {
-                margin-bottom: 20px;
-                text-align: center;
-            }
-            button {
-                padding: 8px 12px;
-                margin: 0 5px;
-                background-color: #4CAF50;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                cursor: pointer;
-            }
-            button:hover {
-                background-color: #45a049;
             }
             .summary-card {
                 background-color: white;
@@ -437,11 +352,10 @@ def visualize_json(data, output_path=None):
         
         <div class="tab-container">
             <div class="tabs">
-                <div class="tab active" onclick="switchTab('comparison-tab')">Model Comparison</div>
-                <div class="tab" onclick="switchTab('raw-json-tab')">Raw JSON Data</div>
+                <div class="tab active">Model Comparison</div>
             </div>
             
-            <div id="comparison-tab" class="tab-content active">
+            <div id="comparison-tab">
                 <!-- Overall Summary -->
                 <div class="container">
                     <h2>Overall Summary</h2>
@@ -496,47 +410,11 @@ def visualize_json(data, output_path=None):
                     <!-- Filled by JavaScript -->
                 </div>
             </div>
-            
-            <div id="raw-json-tab" class="tab-content">
-                <div class="container">
-                    <div class="controls">
-                        <button id="expand-all">Expand All</button>
-                        <button id="collapse-all">Collapse All</button>
-                    </div>
-                    
-                    <div class="search-container">
-                        <input type="text" id="search-input" placeholder="Search in JSON...">
-                    </div>
-                    
-                    <div id="json-tree" class="json-tree"></div>
-                </div>
-            </div>
         </div>
         
         <script>
             // The JSON data
             const jsonData = """ + json.dumps(data) + """;
-            
-            // Switch between tabs
-            function switchTab(tabId) {
-                // Hide all tab contents
-                document.querySelectorAll('.tab-content').forEach(content => {
-                    content.classList.remove('active');
-                });
-                
-                // Deactivate all tabs
-                document.querySelectorAll('.tab').forEach(tab => {
-                    tab.classList.remove('active');
-                });
-                
-                // Activate the selected tab
-                document.getElementById(tabId).classList.add('active');
-                
-                // Find and activate the tab button
-                Array.from(document.querySelectorAll('.tab')).find(tab => 
-                    tab.getAttribute('onclick').includes(tabId)
-                ).classList.add('active');
-            }
             
             // Format number as percentage
             function formatPercent(value) {
@@ -893,160 +771,6 @@ def visualize_json(data, output_path=None):
                     testResultsContainer.appendChild(testContainer);
                 });
             }
-            
-            // Function to create the JSON tree view
-            function createJsonTree(data, container) {
-                const ul = document.createElement('ul');
-                
-                if (Array.isArray(data)) {
-                    // Handle array
-                    for (let i = 0; i < data.length; i++) {
-                        const li = document.createElement('li');
-                        
-                        if (typeof data[i] === 'object' && data[i] !== null) {
-                            const span = document.createElement('span');
-                            span.className = 'collapsible';
-                            span.innerHTML = `<span class="json-key">[${i}]</span>: `;
-                            span.onclick = toggleCollapse;
-                            li.appendChild(span);
-                            
-                            createJsonTree(data[i], li);
-                        } else {
-                            li.innerHTML = `<span class="json-key">[${i}]</span>: ${formatValue(data[i])}`;
-                        }
-                        
-                        ul.appendChild(li);
-                    }
-                } else if (typeof data === 'object' && data !== null) {
-                    // Handle object
-                    for (const key in data) {
-                        if (data.hasOwnProperty(key)) {
-                            const li = document.createElement('li');
-                            
-                            if (typeof data[key] === 'object' && data[key] !== null) {
-                                const span = document.createElement('span');
-                                span.className = 'collapsible';
-                                span.innerHTML = `<span class="json-key">${key}</span>: `;
-                                span.onclick = toggleCollapse;
-                                li.appendChild(span);
-                                
-                                createJsonTree(data[key], li);
-                            } else {
-                                li.innerHTML = `<span class="json-key">${key}</span>: ${formatValue(data[key])}`;
-                            }
-                            
-                            ul.appendChild(li);
-                        }
-                    }
-                }
-                
-                container.appendChild(ul);
-            }
-            
-            // Format values with appropriate styling
-            function formatValue(value) {
-                if (typeof value === 'string') {
-                    return `<span class="json-string">"${escapeHtml(value)}"</span>`;
-                } else if (typeof value === 'number') {
-                    return `<span class="json-number">${value}</span>`;
-                } else if (typeof value === 'boolean') {
-                    return `<span class="json-boolean">${value}</span>`;
-                } else if (value === null) {
-                    return `<span class="json-null">null</span>`;
-                }
-                return escapeHtml(String(value));
-            }
-            
-            // Escape HTML special characters
-            function escapeHtml(text) {
-                return text
-                    .replace(/&/g, "&amp;")
-                    .replace(/</g, "&lt;")
-                    .replace(/>/g, "&gt;")
-                    .replace(/"/g, "&quot;")
-                    .replace(/'/g, "&#039;");
-            }
-            
-            // Toggle collapse/expand
-            function toggleCollapse(event) {
-                this.classList.toggle('collapsed');
-                event.stopPropagation();
-            }
-            
-            // Initialize the tree
-            const treeContainer = document.getElementById('json-tree');
-            createJsonTree(jsonData, treeContainer);
-            
-            // Search functionality
-            const searchInput = document.getElementById('search-input');
-            searchInput.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase();
-                clearHighlights();
-                
-                if (searchTerm.length > 0) {
-                    searchInTree(treeContainer, searchTerm);
-                }
-            });
-            
-            function clearHighlights() {
-                const highlights = document.querySelectorAll('.highlight');
-                highlights.forEach(el => {
-                    el.classList.remove('highlight');
-                });
-            }
-            
-            function searchInTree(element, term) {
-                let found = false;
-                
-                // Check text content
-                if (element.textContent.toLowerCase().includes(term)) {
-                    found = true;
-                    
-                    // Highlight the key or value that contains the search term
-                    const keys = element.querySelectorAll('.json-key');
-                    const values = element.querySelectorAll('.json-string, .json-number, .json-boolean, .json-null');
-                    
-                    [...keys, ...values].forEach(el => {
-                        if (el.textContent.toLowerCase().includes(term)) {
-                            el.classList.add('highlight');
-                            
-                            // Expand parents
-                            let parent = el.parentElement;
-                            while (parent) {
-                                if (parent.previousElementSibling && 
-                                    parent.previousElementSibling.classList.contains('collapsible')) {
-                                    parent.previousElementSibling.classList.remove('collapsed');
-                                }
-                                parent = parent.parentElement;
-                            }
-                        }
-                    });
-                }
-                
-                // Recursively search in children
-                Array.from(element.children).forEach(child => {
-                    if (searchInTree(child, term)) {
-                        found = true;
-                    }
-                });
-                
-                return found;
-            }
-            
-            // Expand/Collapse All buttons
-            document.getElementById('expand-all').addEventListener('click', function() {
-                const collapsibles = document.querySelectorAll('.collapsible');
-                collapsibles.forEach(el => {
-                    el.classList.remove('collapsed');
-                });
-            });
-            
-            document.getElementById('collapse-all').addEventListener('click', function() {
-                const collapsibles = document.querySelectorAll('.collapsible');
-                collapsibles.forEach(el => {
-                    el.classList.add('collapsed');
-                });
-            });
             
             // Initialize the page
             document.addEventListener('DOMContentLoaded', function() {
