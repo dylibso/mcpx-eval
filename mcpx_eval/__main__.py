@@ -364,8 +364,7 @@ def visualize_json(data, output_path=None):
                     avgScoreCell.textContent = formatPercent(model.avgScore);
                     if (model.avgScore === bestWorst.avgScore.best) avgScoreCell.className = 'best';
                     else if (bestWorst.avgScore.best !== bestWorst.avgScore.worst && 
-                            model.avgScore === bestWorst.avgScore.worst &&
-                            (bestWorst.avgScore.best - model.avgScore) >= 30) avgScoreCell.className = 'worst';
+                            model.avgScore === bestWorst.avgScore.worst) avgScoreCell.className = 'worst';
                     row.appendChild(avgScoreCell);
                     
                     // Accuracy
@@ -373,8 +372,7 @@ def visualize_json(data, output_path=None):
                     accuracyCell.textContent = formatPercent(model.accuracy);
                     if (model.accuracy === bestWorst.accuracy.best) accuracyCell.className = 'best';
                     else if (bestWorst.accuracy.best !== bestWorst.accuracy.worst && 
-                            model.accuracy === bestWorst.accuracy.worst &&
-                            (bestWorst.accuracy.best - model.accuracy) >= 30) accuracyCell.className = 'worst';
+                            model.accuracy === bestWorst.accuracy.worst) accuracyCell.className = 'worst';
                     row.appendChild(accuracyCell);
                     
                     // Tool Use
@@ -382,8 +380,7 @@ def visualize_json(data, output_path=None):
                     toolUseCell.textContent = formatPercent(model.tool_use);
                     if (model.tool_use === bestWorst.tool_use.best) toolUseCell.className = 'best';
                     else if (bestWorst.tool_use.best !== bestWorst.tool_use.worst && 
-                            model.tool_use === bestWorst.tool_use.worst &&
-                            (bestWorst.tool_use.best - model.tool_use) >= 30) toolUseCell.className = 'worst';
+                            model.tool_use === bestWorst.tool_use.worst) toolUseCell.className = 'worst';
                     row.appendChild(toolUseCell);
                     
                     // Clarity
@@ -391,8 +388,7 @@ def visualize_json(data, output_path=None):
                     clarityCell.textContent = formatPercent(model.clarity);
                     if (model.clarity === bestWorst.clarity.best) clarityCell.className = 'best';
                     else if (bestWorst.clarity.best !== bestWorst.clarity.worst && 
-                            model.clarity === bestWorst.clarity.worst &&
-                            (bestWorst.clarity.best - model.clarity) >= 30) clarityCell.className = 'worst';
+                            model.clarity === bestWorst.clarity.worst) clarityCell.className = 'worst';
                     row.appendChild(clarityCell);
                     
                     // Helpfulness
@@ -400,8 +396,7 @@ def visualize_json(data, output_path=None):
                     helpfulnessCell.textContent = formatPercent(model.helpfulness);
                     if (model.helpfulness === bestWorst.helpfulness.best) helpfulnessCell.className = 'best';
                     else if (bestWorst.helpfulness.best !== bestWorst.helpfulness.worst && 
-                            model.helpfulness === bestWorst.helpfulness.worst &&
-                            (bestWorst.helpfulness.best - model.helpfulness) >= 30) helpfulnessCell.className = 'worst';
+                            model.helpfulness === bestWorst.helpfulness.worst) helpfulnessCell.className = 'worst';
                     row.appendChild(helpfulnessCell);
                     
                     // Overall
@@ -409,8 +404,7 @@ def visualize_json(data, output_path=None):
                     overallCell.textContent = formatPercent(model.overall);
                     if (model.overall === bestWorst.overall.best) overallCell.className = 'best';
                     else if (bestWorst.overall.best !== bestWorst.overall.worst && 
-                            model.overall === bestWorst.overall.worst &&
-                            (bestWorst.overall.best - model.overall) >= 30) overallCell.className = 'worst';
+                            model.overall === bestWorst.overall.worst) overallCell.className = 'worst';
                     row.appendChild(overallCell);
                     
                     // Hallucination
@@ -606,8 +600,7 @@ def visualize_json(data, output_path=None):
                         durationCell.textContent = (model.duration || 0).toFixed(1);
                         if (model.duration === bestWorst.duration.best) durationCell.className = 'best';
                         else if (bestWorst.duration.best !== bestWorst.duration.worst && 
-                                model.duration === bestWorst.duration.worst &&
-                                (model.duration - bestWorst.duration.best) > 0.9) durationCell.className = 'worst';
+                                model.duration === bestWorst.duration.worst) durationCell.className = 'worst';
                         row.appendChild(durationCell);
 
                         // Tool Calls
