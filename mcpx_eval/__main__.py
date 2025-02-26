@@ -20,19 +20,13 @@ def print_result(result):
     print("Score:")
     print(result.description)
 
-    print("\nPerformance metrics:")
     print("Number of tool calls:", result.tool_calls)
     if result.redundant_tool_calls > 0:
         print("Redundant tool calls:", result.redundant_tool_calls)
-    print("Accuracy:", result.accuracy)
     print("Tool use:", result.tool_use)
-
-    print("\nUser-perceived quality:")
+    print("Accuracy:", result.accuracy)
     print("Clarity:", result.clarity)
     print("Helpfulness:", result.helpfulness)
-    print("User alignment:", result.user_aligned)
-
-    print("\nAdvanced metrics:")
 
     # Hallucination metrics
     print("Hallucination score:", result.hallucination_score)
@@ -107,7 +101,6 @@ def generate_table(args):
                 score.tool_use,
                 score.clarity,
                 score.helpfulness,
-                score.user_aligned,
                 score.overall
             ]
             scores_with_avg.append((score, sum(numeric_scores) / len(numeric_scores)))
@@ -129,7 +122,6 @@ def generate_table(args):
             "Tool Use": (lambda s, _: s.tool_use, True),
             "Clarity": (lambda s, _: s.clarity, True),
             "Helpfulness": (lambda s, _: s.helpfulness, True),
-            "User Alignment": (lambda s, _: s.user_aligned, True),
             "Overall": (lambda s, _: s.overall, True),
             "Hallucination Score": (lambda s, _: s.hallucination_score, False),
             "Tool Calls": (lambda s, _: s.tool_calls, None),
@@ -227,7 +219,6 @@ def create_visualization(args):
             "redundant_tool_calls",
             "clarity",
             "helpfulness",
-            "user_aligned",
             "overall",
             "hallucination_score",
         ]
@@ -255,7 +246,6 @@ def create_visualization(args):
                     "tool_use": score.tool_use,
                     "clarity": score.clarity,
                     "helpfulness": score.helpfulness,
-                    "user_aligned": score.user_aligned,
                     "overall": score.overall,
                     "hallucination_score": score.hallucination_score,
                 }

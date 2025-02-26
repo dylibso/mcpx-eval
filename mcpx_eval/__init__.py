@@ -26,14 +26,11 @@ class Score(BaseModel):
     description: str = Field("Description of results for this model")
 
     # Core metrics
-    accuracy: float = Field("A score of how accurate the response is")
     tool_use: float = Field("A score of how appropriate the tool use is")
     tool_calls: int = Field("Number of tool calls")
+    accuracy: float = Field("A score of how accurate the response is")
     clarity: float = Field("A score of how clear and understandable the response is")
     helpfulness: float = Field("A score of how helpful the response is to the user")
-    user_aligned: float = Field(
-        "A score of how well the response aligns with user intent"
-    )
     overall: float = Field(
         "An overall score of the quality of the response, this may include things not included in the other scores"
     )
@@ -80,11 +77,12 @@ Performance metrics:
 User-perceived quality metrics:
 - The clarity score should measure how clear, concise, and understandable the model's response is
 - The helpfulness score should measure how useful the response is in addressing the user's need
-- The user_aligned score should measure how well the response aligns with the user's intent and expectations
 
 Advanced evaluation metrics:
 - The hallucination_score should measure the presence of made-up, incorrect, or factually unsupported statements
   (lower is better, with 0 being no hallucinations and 100 being completely hallucinated)
+- hallucination_score should only apply to made up information, if information is true at the time of the request
+  it should be considered to be true
 - The false_claims field should list any specific false statements or hallucinations identified in the response
 
 - The overall score should reflect the overall quality of the output, considering both performance and user experience
@@ -98,6 +96,21 @@ For responses containing hallucinations, analyze:
 
 Be thorough in your evaluation, considering how well the model's response meets both technical requirements and user needs.
 """
+
+TEST_PROMPT = """
+You are a helpful AI assistant with access to various external tools and APIs. Your goal is to complete tasks thoroughly and autonomously by making full use of these tools. Here are your core operating principles:
+
+1. Take initiative - Don't wait for user permission to use tools. If a tool would help complete the task, use it immediately.
+2. Chain multiple tools together - Many tasks require multiple tool calls in sequence. Plan out and execute the full chain of calls needed to achieve the goal.
+3. Handle errors gracefully - If a tool call fails, try alternative approaches or tools rather than asking the user what to do.
+4. Make reasonable assumptions - When tool calls require parameters, use your best judgment to provide appropriate values rather than asking the user.
+5. Show your work - After completing tool calls, explain what you did and show relevant results, but focus on the final outcome the user wanted.
+6. Be thorough - Use tools repeatedly as needed until you're confident you've fully completed the task. Don't stop at partial solutions.
+7. Try to utilize the tools that are available instead of searching for new tools
+
+Your responses should focus on results rather than asking questions. Only ask the user for clarification if the task itself is unclear or impossible with the tools available.
+"""
+
 
 
 @dataclass
@@ -136,7 +149,6 @@ class Database:
                 redundant_tool_calls INT NOT NULL DEFAULT 0,
                 clarity REAL NOT NULL DEFAULT 0.0,
                 helpfulness REAL NOT NULL DEFAULT 0.0, 
-                user_aligned REAL NOT NULL DEFAULT 0.0,
                 overall REAL NOT NULL,
                 hallucination_score REAL NOT NULL DEFAULT 0.0,
                 false_claims TEXT NOT NULL DEFAULT '[]',
@@ -175,12 +187,11 @@ class Database:
                     redundant_tool_calls,
                     clarity,
                     helpfulness,
-                    user_aligned,
                     overall,
                     hallucination_score,
                     false_claims,
                     tool_analysis
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """,
             (
                 name,
@@ -194,7 +205,6 @@ class Database:
                 score.redundant_tool_calls,
                 score.clarity,
                 score.helpfulness,
-                score.user_aligned,
                 score.overall,
                 score.hallucination_score,
                 json.dumps(score.false_claims),
@@ -281,13 +291,13 @@ class Database:
             """
             SELECT t, model, duration, output, 
                    description, accuracy, tool_use, tool_calls, 
-                   redundant_tool_calls, clarity, helpfulness, user_aligned, 
+                   redundant_tool_calls, clarity, helpfulness, 
                    overall, hallucination_score, false_claims,
                    tool_analysis
             FROM eval_results 
-            WHERE test_name=?
+            WHERE test_name LIKE ?
         """,
-            (name,),
+            (name.replace('*', '%'),),
         )
         items = cursor.fetchall()
         out = []
@@ -297,8 +307,8 @@ class Database:
             model_key = model
 
             # Parse JSON fields
-            false_claims = json.loads(item[14]) if item[14] else []
-            tool_analysis = json.loads(item[15]) if item[15] else {}
+            false_claims = json.loads(item[13]) if item[13] else []
+            tool_analysis = json.loads(item[14]) if item[14] else {}
 
             if model_key not in scoremap:
                 scoremap[model_key] = []
@@ -314,9 +324,8 @@ class Database:
                     redundant_tool_calls=item[8],
                     clarity=item[9],
                     helpfulness=item[10],
-                    user_aligned=item[11],
-                    overall=item[12],
-                    hallucination_score=item[13],
+                    overall=item[11],
+                    hallucination_score=item[12],
                     false_claims=false_claims,
                     tool_analysis=tool_analysis,
                 )
@@ -331,7 +340,6 @@ class Database:
             avg_redundant_tool_calls = 0.0
             avg_clarity = 0.0
             avg_helpfulness = 0.0
-            avg_user_aligned = 0.0
             avg_overall = 0.0
             avg_hallucination = 0.0
 
@@ -355,7 +363,6 @@ class Database:
                 avg_redundant_tool_calls += score.redundant_tool_calls
                 avg_clarity += score.clarity
                 avg_helpfulness += score.helpfulness
-                avg_user_aligned += score.user_aligned
                 avg_overall += score.overall
                 avg_hallucination += score.hallucination_score
 
@@ -395,7 +402,6 @@ class Database:
                     redundant_tool_calls=int(avg_redundant_tool_calls / n),
                     clarity=avg_clarity / n,
                     helpfulness=avg_helpfulness / n,
-                    user_aligned=avg_user_aligned / n,
                     overall=avg_overall / n,
                     hallucination_score=avg_hallucination / n,
                     false_claims=combined_false_claims,
@@ -436,6 +442,7 @@ class Judge:
         model.config.model = model.name
         if model.config.client is None:
             model.config.client = self.agent.client
+        model.config.system = TEST_PROMPT
         self.models.append(model)
 
     async def run_test(self, test: "Test", save=True) -> Results:
