@@ -516,13 +516,7 @@ def visualize_json(data, output_path=None):
                 font-weight: bold;
                 color: #333;
             }
-            .hallucination-details {
-                margin-top: 10px;
-                padding: 10px;
-                background-color: #fff0f0;
-                border-radius: 5px;
-                border-left: 3px solid #cc0000;
-            }
+            /* Removed hallucination-details styling */
         </style>
     </head>
     <body>
@@ -889,7 +883,7 @@ def visualize_json(data, output_path=None):
                     // Create table body
                     const tbody = document.createElement('tbody');
                     
-                    // Add rows for each model
+                    // Add rows for each model (without false claims)
                     models.forEach((model, index) => {
                         const row = document.createElement('tr');
                         row.className = 'model-header';
@@ -965,30 +959,7 @@ def visualize_json(data, output_path=None):
                         
                         tbody.appendChild(row);
                         
-                        // Add false claims if any
-                        if (model.false_claims && model.false_claims.length > 0) {
-                            const claimsRow = document.createElement('tr');
-                            
-                            const claimsCell = document.createElement('td');
-                            claimsCell.colSpan = 11;
-                            claimsCell.className = 'hallucination-details';
-                            
-                            const claimsTitle = document.createElement('div');
-                            claimsTitle.textContent = 'False Claims:';
-                            claimsTitle.style.fontWeight = 'bold';
-                            claimsCell.appendChild(claimsTitle);
-                            
-                            const claimsList = document.createElement('ul');
-                            model.false_claims.forEach(claim => {
-                                const claimItem = document.createElement('li');
-                                claimItem.textContent = claim;
-                                claimsList.appendChild(claimItem);
-                            });
-                            claimsCell.appendChild(claimsList);
-                            
-                            claimsRow.appendChild(claimsCell);
-                            tbody.appendChild(claimsRow);
-                        }
+                        // False claims are not displayed in this view
                     });
                     
                     table.appendChild(tbody);
