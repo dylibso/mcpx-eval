@@ -285,6 +285,24 @@ def list_visualizations(args):
         print("-" * 50)
 
 
+def json_summary(args):
+    """Generate a JSON summary of all test data"""
+    import json
+    
+    db = Database()
+    summary = db.generate_json_summary()
+    
+    # Format JSON with indentation for readability
+    formatted_json = json.dumps(summary, indent=2)
+    
+    # Output to file or stdout
+    if args.output:
+        with open(args.output, 'w') as f:
+            f.write(formatted_json)
+        print(f"JSON summary saved to {args.output}")
+    else:
+        print(formatted_json)
+
 def display_visualization(args):
     """Display a visualization in a web browser"""
     import webbrowser
@@ -537,6 +555,14 @@ async def run():
         "-o",
         help="Output HTML file path (default: results_[test-names].html)",
     )
+    
+    # JSON summary command
+    json_parser = subparsers.add_parser("json", help="Generate JSON summary of all test data")
+    json_parser.add_argument(
+        "--output",
+        "-o",
+        help="Output JSON file path (default: print to stdout)",
+    )
 
     # Visualization commands
     viz_parser = subparsers.add_parser("viz", help="Visualization subcommands")
@@ -629,6 +655,11 @@ async def run():
     # Table command
     elif command == "table":
         generate_table(args)
+        return
+        
+    # JSON summary command
+    elif command == "json":
+        json_summary(args)
         return
 
     # Test command (default)
