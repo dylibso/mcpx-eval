@@ -400,10 +400,15 @@ class Database:
 
             if model_key not in scoremap:
                 scoremap[model_key] = []
+            try:
+                duration = float(item[2])  # Try to convert duration to float
+            except (ValueError, TypeError):
+                duration = 0.0  # Default to 0 if conversion fails
+                
             scoremap[model_key].append(
                 Score(
                     model=model,
-                    duration=float(item[2]),  # Duration is at index 2 in the query results
+                    duration=duration,
                     llm_output=item[3],
                     description=item[4],
                     accuracy=item[5],
