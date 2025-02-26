@@ -313,28 +313,30 @@ def visualize_json(data, output_path=None):
         <div class="timestamp">Generated on: """ + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + """</div>
         
         <div id="comparison-tab">
-                <div class="container">
-                    <h3>Model Rankings (All Tests)</h3>
-                    <table id="overall-table">
-                        <thead>
-                            <tr>
-                                <th>Rank</th>
-                                <th>Model</th>
-                                <th>Average Score</th>
-                                <th>Accuracy</th>
-                                <th>Tool Use</th>
-                                <th>Clarity</th>
-                                <th>Helpfulness</th>
-                                <th>Overall</th>
-                                <th>Hallucination</th>
-                                <th>Tool Calls</th>
-                                <th>Tests</th>
-                            </tr>
-                        </thead>
-                        <tbody id="overall-table-body">
-                            <!-- Filled by JavaScript -->
-                        </tbody>
-                    </table>
+                <div id="overall-rankings" style="display: none;">
+                    <div class="container">
+                        <h3>Model Rankings (All Tests)</h3>
+                        <table id="overall-table">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Model</th>
+                                    <th>Average Score</th>
+                                    <th>Accuracy</th>
+                                    <th>Tool Use</th>
+                                    <th>Clarity</th>
+                                    <th>Helpfulness</th>
+                                    <th>Overall</th>
+                                    <th>Hallucination</th>
+                                    <th>Tool Calls</th>
+                                    <th>Tests</th>
+                                </tr>
+                            </thead>
+                            <tbody id="overall-table-body">
+                                <!-- Filled by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 
                 <!-- Individual Test Results -->
@@ -691,18 +693,14 @@ def visualize_json(data, output_path=None):
             
             // Initialize the page
             document.addEventListener('DOMContentLoaded', function() {
-                // Populate the tables
-                populateOverallTable();
-                createTestTables();
+                // Only show overall rankings if there is more than one test
+                const testCount = Object.keys(jsonData.tests || {}).length;
+                if (testCount > 1) {
+                    document.getElementById('overall-rankings').style.display = 'block';
+                    populateOverallTable();
+                }
                 
-                // Initially collapse all nodes except the first level in JSON view
-                const topLevelItems = treeContainer.querySelector('ul').children;
-                Array.from(topLevelItems).forEach(item => {
-                    const collapsibles = item.querySelectorAll('.collapsible');
-                    Array.from(collapsibles).slice(1).forEach(el => {
-                        el.classList.add('collapsed');
-                    });
-                });
+                createTestTables();
             });
         </script>
     </body>
