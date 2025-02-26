@@ -403,7 +403,7 @@ class Database:
             scoremap[model_key].append(
                 Score(
                     model=model,
-                    duration=0.0,
+                    duration=float(item[2]),  # Duration is at index 2 in the query results
                     llm_output=item[3],
                     description=item[4],
                     accuracy=item[5],
@@ -421,7 +421,7 @@ class Database:
 
         for model_key, scores in scoremap.items():
             # Calculate averages
-            avg_duration = 0.0
+            avg_duration = sum(float(score.duration) for score in scores)
             avg_accuracy = 0.0
             avg_tool_use = 0.0
             avg_tool_calls = 0.0
@@ -444,7 +444,6 @@ class Database:
             model = scores[0].model
 
             for score in scores:
-                avg_duration += score.duration
                 avg_accuracy += score.accuracy
                 avg_tool_use += score.tool_use
                 avg_tool_calls += score.tool_calls
