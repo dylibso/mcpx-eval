@@ -156,15 +156,7 @@ class Database:
                 FOREIGN KEY(test_name) REFERENCES tests(name)
             );
             
-            CREATE TABLE IF NOT EXISTS comparison_visualizations (
-                id INTEGER PRIMARY KEY,
-                t TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                name TEXT NOT NULL,
-                description TEXT NOT NULL,
-                test_names TEXT NOT NULL,
-                chart_data TEXT NOT NULL,
-                chart_type TEXT NOT NULL
-            );
+            -- Visualization table removed
         """
         )
         self.conn.commit()
@@ -228,62 +220,7 @@ class Database:
             self.save_score(name, score, commit=False)
         self.conn.commit()
 
-    def create_visualization(
-        self,
-        name: str,
-        description: str,
-        test_names: list,
-        chart_type: str,
-        chart_data: dict,
-    ):
-        """
-        Create and save a visualization comparing results across different tests
-
-        Args:
-            name: Name of the visualization
-            description: Description of what the visualization shows
-            test_names: List of test names to include in visualization
-            chart_type: Type of chart (bar, line, radar, etc.)
-            chart_data: JSON-serializable data for the chart
-        """
-        self.conn.execute(
-            """
-            INSERT INTO comparison_visualizations 
-            (name, description, test_names, chart_type, chart_data)
-            VALUES (?, ?, ?, ?, ?);
-            """,
-            (
-                name,
-                description,
-                json.dumps(test_names),
-                chart_type,
-                json.dumps(chart_data),
-            ),
-        )
-        self.conn.commit()
-
-    def get_visualizations(self):
-        """Get all saved visualizations"""
-        cursor = self.conn.execute(
-            """
-            SELECT id, name, description, test_names, chart_type
-            FROM comparison_visualizations
-            ORDER BY t DESC
-            """
-        )
-        return cursor.fetchall()
-
-    def get_visualization(self, viz_id):
-        """Get a specific visualization by ID"""
-        cursor = self.conn.execute(
-            """
-            SELECT id, name, description, test_names, chart_type, chart_data
-            FROM comparison_visualizations
-            WHERE id = ?
-            """,
-            (viz_id,),
-        )
-        return cursor.fetchone()
+    # Visualization methods removed
         
     def generate_json_summary(self):
         """
