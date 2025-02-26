@@ -121,7 +121,7 @@ def visualize_json(data, output_path=None):
     <html>
     <head>
         <meta charset="UTF-8">
-        <title>MCPX Evaluation JSON Visualization</title>
+        <title>mcpx-eval Scoreboard</title>
         <style>
             body {
                 font-family: Arial, sans-serif;
@@ -216,7 +216,7 @@ def visualize_json(data, output_path=None):
         </style>
     </head>
     <body>
-        <h1>MCPX Evaluation JSON Visualization</h1>
+        <h1>mcpx-eval Scoreboard</h1>
         <div class="timestamp">Generated on: """
         + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         + """</div>
