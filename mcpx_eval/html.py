@@ -12,26 +12,26 @@ def visualize_json(data, output_path=None):
             return None
             
         models = data["total"]["models"]
+        print(models) 
         model_names = list(models.keys())
         accuracies = [models[m]["accuracy"] for m in model_names]
-        overall_scores = [models[m]["overall"] for m in model_names]
+        tool_scores = [models[m]["tool_use"] for m in model_names]
         
         # Sort by overall score
-        sorted_indices = sorted(range(len(overall_scores)), key=lambda k: overall_scores[k], reverse=True)
+        sorted_indices = sorted(range(len(tool_scores)), key=lambda k: tool_scores[k], reverse=True)
         model_names = [model_names[i] for i in sorted_indices]
         accuracies = [accuracies[i] for i in sorted_indices]
-        overall_scores = [overall_scores[i] for i in sorted_indices]
+        tool_scores = [tool_scores[i] for i in sorted_indices]
         
         plt.figure(figsize=(12, 6))
         x = range(len(model_names))
         width = 0.35
         
         plt.bar([i - width/2 for i in x], accuracies, width, label='Accuracy', color='skyblue')
-        plt.bar([i + width/2 for i in x], overall_scores, width, label='Overall', color='lightgreen')
+        plt.bar([i + width/2 for i in x], tool_scores, width, label='Tool Use', color='lightgreen')
         
         plt.xlabel('Models')
         plt.ylabel('Score (%)')
-        plt.title('Model Performance Comparison')
         plt.xticks(x, model_names, rotation=45, ha='right')
         plt.legend()
         plt.grid(True, alpha=0.3)
@@ -152,7 +152,7 @@ def visualize_json(data, output_path=None):
         + """</div>
         
         <div class="container">
-            <h2>Performance Overview</h2>
+            <h2>Overview</h2>
             <img src="data:image/png;base64,"""
         + create_performance_graph(data)
         + """" alt="Model Performance Graph" style="width:100%; max-width:1000px; display:block; margin:0 auto;">
