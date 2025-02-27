@@ -256,7 +256,8 @@ class Database:
                         "hallucination_score": "{:.3f}%",
                         "tool_calls": "{:.3f}",
                         "redundant_tool_calls": "{:.3f}",
-                        "runs": "{:.0f}"
+                        "runs": "{:.0f}",
+                        "duration": "{:.3f}"
                     }
                 )
                 .background_gradient(
