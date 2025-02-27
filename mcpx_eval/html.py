@@ -499,12 +499,12 @@ def visualize_json(data, output_path=None):
 
                         // Tool Calls
                         const toolCallsCell = document.createElement('td');
-                        toolCallsCell.textContent = model.tool_calls || 0;
+                        toolCallsCell.textContent = ((model.tool_calls || 0).toFixed(1));
                         row.appendChild(toolCallsCell);
                         
                         // Redundant Tool Calls
                         const redundantCallsCell = document.createElement('td');
-                        redundantCallsCell.textContent = model.redundant_tool_calls || 0;
+                        redundantCallsCell.textContent = ((model.redundant_tool_calls || 0).toFixed(1));
                         row.appendChild(redundantCallsCell);
                         
                         tbody.appendChild(row);
