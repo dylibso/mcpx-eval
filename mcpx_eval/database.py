@@ -48,44 +48,26 @@ class Database:
         if name == "":
             return
 
-        self.conn.execute(
-            """
-                INSERT INTO eval_results (
-                    test_name,
-                    model,
-                    duration,
-                    output,
-                    description,
-                    accuracy,
-                    tool_use,
-                    tool_calls,
-                    redundant_tool_calls,
-                    clarity,
-                    helpfulness,
-                    overall,
-                    hallucination_score,
-                    false_claims,
-                    tool_analysis
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-            """,
-            (
-                name,
-                score.model,
-                score.duration,
-                score.llm_output,
-                score.description,
-                score.accuracy,
-                score.tool_use,
-                score.tool_calls,
-                score.redundant_tool_calls,
-                score.clarity,
-                score.helpfulness,
-                score.overall,
-                score.hallucination_score,
-                json.dumps(score.false_claims),
-                json.dumps(score.tool_analysis),
-            ),
-        )
+        # Convert score to DataFrame for efficient insertion
+        df = pd.DataFrame([{
+            'test_name': name,
+            'model': score.model,
+            'duration': score.duration,
+            'output': score.llm_output,
+            'description': score.description,
+            'accuracy': score.accuracy,
+            'tool_use': score.tool_use,
+            'tool_calls': score.tool_calls,
+            'redundant_tool_calls': score.redundant_tool_calls,
+            'clarity': score.clarity,
+            'helpfulness': score.helpfulness,
+            'overall': score.overall,
+            'hallucination_score': score.hallucination_score,
+            'false_claims': json.dumps(score.false_claims),
+            'tool_analysis': json.dumps(score.tool_analysis)
+        }])
+        
+        df.to_sql('eval_results', self.conn, if_exists='append', index=False)
         if commit:
             self.conn.commit()
 
@@ -99,8 +81,30 @@ class Database:
         self.conn.commit()
 
     def save_results(self, name: str, results: Results):
-        for score in results.scores:
-            self.save_score(name, score, commit=False)
+        if not results.scores:
+            return
+            
+        # Convert all scores to DataFrame at once
+        records = [{
+            'test_name': name,
+            'model': score.model,
+            'duration': score.duration,
+            'output': score.llm_output,
+            'description': score.description,
+            'accuracy': score.accuracy,
+            'tool_use': score.tool_use,
+            'tool_calls': score.tool_calls,
+            'redundant_tool_calls': score.redundant_tool_calls,
+            'clarity': score.clarity,
+            'helpfulness': score.helpfulness,
+            'overall': score.overall,
+            'hallucination_score': score.hallucination_score,
+            'false_claims': json.dumps(score.false_claims),
+            'tool_analysis': json.dumps(score.tool_analysis)
+        } for score in results.scores]
+        
+        df = pd.DataFrame(records)
+        df.to_sql('eval_results', self.conn, if_exists='append', index=False)
         self.conn.commit()
 
     def average_results(self, name: str) -> Results:
@@ -161,6 +165,47 @@ class Database:
         ]
         
         return Results(scores=scores)
+
+    def get_test_stats(self, test_name: str | None = None) -> pd.DataFrame:
+        """Get detailed statistics for tests.
+        
+        Args:
+            test_name: Optional test name to filter results
+            
+        Returns:
+            DataFrame with test statistics including:
+            - Number of runs per model
+            - Mean and std dev of scores
+            - Min/max durations
+        """
+        query = """
+            SELECT 
+                test_name,
+                model,
+                COUNT(*) as runs,
+                AVG(duration) as mean_duration,
+                MIN(duration) as min_duration,
+                MAX(duration) as max_duration,
+                AVG(accuracy) as mean_accuracy,
+                AVG(tool_use) as mean_tool_use,
+                AVG(tool_calls) as mean_tool_calls,
+                AVG(redundant_tool_calls) as mean_redundant_calls,
+                AVG(clarity) as mean_clarity,
+                AVG(helpfulness) as mean_helpfulness,
+                AVG(overall) as mean_overall,
+                AVG(hallucination_score) as mean_hallucination
+            FROM eval_results
+        """
+        
+        if test_name:
+            query += " WHERE test_name = ?"
+            params = (test_name,)
+        else:
+            params = ()
+            
+        query += " GROUP BY test_name, model"
+        
+        return pd.read_sql_query(query, self.conn, params=params)
 
     def generate_json_summary(self):
         # Read results into a pandas DataFrame
