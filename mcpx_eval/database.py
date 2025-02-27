@@ -1,5 +1,6 @@
 import sqlite3
 import json
+import pandas as pd
 from datetime import datetime
 from .models import Score, Results, Test
 
@@ -103,9 +104,103 @@ class Database:
         self.conn.commit()
 
     def average_results(self, name: str) -> Results:
-        # ... [keeping the existing average_results implementation]
-        pass
+        # Read results into a pandas DataFrame
+        df = pd.read_sql_query(
+            """
+            SELECT *
+            FROM eval_results
+            WHERE test_name = ?
+            """,
+            self.conn,
+            params=(name,)
+        )
+        
+        if df.empty:
+            return Results(scores=[])
+            
+        # Convert false_claims and tool_analysis from JSON strings
+        df['false_claims'] = df['false_claims'].apply(json.loads)
+        df['tool_analysis'] = df['tool_analysis'].apply(json.loads)
+        
+        # Group by model and aggregate
+        grouped = df.groupby('model').agg({
+            'duration': 'mean',
+            'output': 'first',  # take first output as example
+            'description': 'first',  # take first description as example
+            'accuracy': 'mean',
+            'tool_use': 'mean',
+            'tool_calls': 'mean',
+            'redundant_tool_calls': 'mean',
+            'clarity': 'mean',
+            'helpfulness': 'mean',
+            'overall': 'mean',
+            'hallucination_score': 'mean',
+            'false_claims': 'sum',  # combine all false claims
+            'tool_analysis': 'first'  # take first tool analysis
+        }).reset_index()
+        
+        # Convert back to Score objects
+        scores = [
+            Score(
+                model=row['model'],
+                duration=row['duration'],
+                llm_output=row['output'],
+                description=row['description'],
+                accuracy=row['accuracy'],
+                tool_use=row['tool_use'],
+                tool_calls=int(row['tool_calls']),
+                redundant_tool_calls=int(row['redundant_tool_calls']),
+                clarity=row['clarity'],
+                helpfulness=row['helpfulness'],
+                overall=row['overall'],
+                hallucination_score=row['hallucination_score'],
+                false_claims=row['false_claims'],
+                tool_analysis=row['tool_analysis']
+            )
+            for _, row in grouped.iterrows()
+        ]
+        
+        return Results(scores=scores)
 
     def generate_json_summary(self):
-        # ... [keeping the existing generate_json_summary implementation] 
-        pass
+        # Read results into a pandas DataFrame
+        df = pd.read_sql_query(
+            """
+            SELECT 
+                test_name,
+                model,
+                AVG(accuracy) as accuracy,
+                AVG(tool_use) as tool_use,
+                AVG(tool_calls) as tool_calls,
+                AVG(redundant_tool_calls) as redundant_tool_calls,
+                AVG(clarity) as clarity,
+                AVG(helpfulness) as helpfulness,
+                AVG(overall) as overall,
+                AVG(hallucination_score) as hallucination_score,
+                COUNT(*) as runs
+            FROM eval_results
+            GROUP BY test_name, model
+            """,
+            self.conn
+        )
+        
+        # Convert DataFrame to nested dictionary structure
+        summary = {}
+        for test_name in df['test_name'].unique():
+            test_df = df[df['test_name'] == test_name]
+            summary[test_name] = {
+                row['model']: {
+                    'accuracy': row['accuracy'],
+                    'tool_use': row['tool_use'],
+                    'tool_calls': row['tool_calls'],
+                    'redundant_tool_calls': row['redundant_tool_calls'],
+                    'clarity': row['clarity'],
+                    'helpfulness': row['helpfulness'],
+                    'overall': row['overall'],
+                    'hallucination_score': row['hallucination_score'],
+                    'runs': row['runs']
+                }
+                for _, row in test_df.iterrows()
+            }
+        
+        return summary
