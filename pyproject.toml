@@ -7,7 +7,6 @@ requires-python = ">=3.12"
 dependencies = [
     "mcpx-py>=0.2.1",
     "mcpx-pydantic-ai",
-    "pandas>=2.2.3",
 ]
 
 [tool.uv]
