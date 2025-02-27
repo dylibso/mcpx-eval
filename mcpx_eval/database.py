@@ -254,8 +254,8 @@ class Database:
                         "helpfulness": "{:.3f}%",
                         "overall": "{:.3f}%",
                         "hallucination_score": "{:.3f}%",
-                        "tool_calls": "{:.3f}",
-                        "redundant_tool_calls": "{:.3f}",
+                        "tool_calls": "{:.1f}",
+                        "redundant_tool_calls": "{:.1f}",
                         "runs": "{:.0f}",
                         "duration": "{:.3f}"
                     }
