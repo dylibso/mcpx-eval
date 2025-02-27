@@ -248,12 +248,15 @@ class Database:
             return (
                 df.style.format(
                     {
-                        "accuracy": "{:.1f}%",
-                        "tool_use": "{:.1f}%",
-                        "clarity": "{:.1f}%",
-                        "helpfulness": "{:.1f}%",
-                        "overall": "{:.1f}%",
-                        "hallucination_score": "{:.1f}%",
+                        "accuracy": "{:.3f}%",
+                        "tool_use": "{:.3f}%",
+                        "clarity": "{:.3f}%",
+                        "helpfulness": "{:.3f}%",
+                        "overall": "{:.3f}%",
+                        "hallucination_score": "{:.3f}%",
+                        "tool_calls": "{:.3f}",
+                        "redundant_tool_calls": "{:.3f}",
+                        "runs": "{:.0f}"
                     }
                 )
                 .background_gradient(
