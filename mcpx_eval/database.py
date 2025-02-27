@@ -286,16 +286,16 @@ class Database:
             }
         }
 
-        # Calculate total metrics
+        # Calculate total metrics with formatted precision
         total_metrics = df.agg({
-            "accuracy": "mean",
-            "tool_use": "mean",
-            "tool_calls": "sum",
-            "redundant_tool_calls": "sum",
-            "clarity": "mean",
-            "helpfulness": "mean",
-            "overall": "mean",
-            "hallucination_score": "mean"
+            "accuracy": lambda x: round(x.mean(), 3),
+            "tool_use": lambda x: round(x.mean(), 3),
+            "tool_calls": lambda x: round(x.sum(), 1),
+            "redundant_tool_calls": lambda x: round(x.sum(), 1),
+            "clarity": lambda x: round(x.mean(), 3),
+            "helpfulness": lambda x: round(x.mean(), 3),
+            "overall": lambda x: round(x.mean(), 3),
+            "hallucination_score": lambda x: round(x.mean(), 3)
         })
         summary["total"]["metrics"] = total_metrics.to_dict()
 
@@ -304,16 +304,16 @@ class Database:
             test_df = df[df["test_name"] == test_name]
             test_df = test_df.sort_values("overall", ascending=False)
             
-            # Calculate test metrics
+            # Calculate test metrics with formatted precision
             test_metrics = test_df.agg({
-                "accuracy": "mean",
-                "tool_use": "mean",
-                "tool_calls": "sum",
-                "redundant_tool_calls": "sum",
-                "clarity": "mean",
-                "helpfulness": "mean",
-                "overall": "mean",
-                "hallucination_score": "mean"
+                "accuracy": lambda x: round(x.mean(), 3),
+                "tool_use": lambda x: round(x.mean(), 3),
+                "tool_calls": lambda x: round(x.sum(), 1),
+                "redundant_tool_calls": lambda x: round(x.sum(), 1),
+                "clarity": lambda x: round(x.mean(), 3),
+                "helpfulness": lambda x: round(x.mean(), 3),
+                "overall": lambda x: round(x.mean(), 3),
+                "hallucination_score": lambda x: round(x.mean(), 3)
             })
             
             summary["tests"][test_name] = {
