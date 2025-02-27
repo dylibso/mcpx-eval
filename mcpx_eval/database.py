@@ -317,6 +317,12 @@ class Database:
                 "hallucination_score": lambda x: round(x.mean(), 3)
             })
             
+            # Round tool calls in test metrics to 1 decimal place
+            if 'tool_calls' in test_metrics:
+                test_metrics['tool_calls'] = round(test_metrics['tool_calls'], 1)
+            if 'redundant_tool_calls' in test_metrics:
+                test_metrics['redundant_tool_calls'] = round(test_metrics['redundant_tool_calls'], 1)
+            
             summary["tests"][test_name] = {
                 "models": {
                     row["model"]: {
