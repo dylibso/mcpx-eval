@@ -2,6 +2,47 @@ def visualize_json(data, output_path=None):
     """Create an interactive HTML visualization of JSON data"""
     import json
     from datetime import datetime
+    import matplotlib.pyplot as plt
+    import io
+    import base64
+    
+    def create_performance_graph(data):
+        """Create a matplotlib graph of model performance"""
+        if not data.get("total", {}).get("models"):
+            return None
+            
+        models = data["total"]["models"]
+        model_names = list(models.keys())
+        accuracies = [models[m]["accuracy"] for m in model_names]
+        overall_scores = [models[m]["overall"] for m in model_names]
+        
+        # Sort by overall score
+        sorted_indices = sorted(range(len(overall_scores)), key=lambda k: overall_scores[k], reverse=True)
+        model_names = [model_names[i] for i in sorted_indices]
+        accuracies = [accuracies[i] for i in sorted_indices]
+        overall_scores = [overall_scores[i] for i in sorted_indices]
+        
+        plt.figure(figsize=(12, 6))
+        x = range(len(model_names))
+        width = 0.35
+        
+        plt.bar([i - width/2 for i in x], accuracies, width, label='Accuracy', color='skyblue')
+        plt.bar([i + width/2 for i in x], overall_scores, width, label='Overall', color='lightgreen')
+        
+        plt.xlabel('Models')
+        plt.ylabel('Score (%)')
+        plt.title('Model Performance Comparison')
+        plt.xticks(x, model_names, rotation=45, ha='right')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        
+        # Convert plot to base64 string
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', dpi=300, bbox_inches='tight')
+        plt.close()
+        buf.seek(0)
+        return base64.b64encode(buf.getvalue()).decode('utf-8')
 
     # Create HTML content with comparison tables and JSON viewer
     html = (
@@ -109,6 +150,13 @@ def visualize_json(data, output_path=None):
         <div class="timestamp">Generated on: """
         + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         + """</div>
+        
+        <div class="container">
+            <h2>Performance Overview</h2>
+            <img src="data:image/png;base64,"""
+        + create_performance_graph(data)
+        + """" alt="Model Performance Graph" style="width:100%; max-width:1000px; display:block; margin:0 auto;">
+        </div>
         
         <div id="comparison-tab">
                 <div id="overall-rankings" style="display: none;">
