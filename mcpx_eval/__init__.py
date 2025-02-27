@@ -5,6 +5,7 @@ import os
 from datetime import datetime, timedelta
 import json
 from typing import List
+import pandas as pd
 
 from mcpx_pydantic_ai import Agent
 from mcpx_py import Ollama, Claude, Gemini, OpenAI, ChatConfig, Chat
