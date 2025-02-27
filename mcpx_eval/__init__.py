@@ -122,197 +122,133 @@ class Database:
 
     def generate_json_summary(self):
         """
-        Generate a comprehensive JSON summary of all test data in the database
+        Generate a comprehensive JSON summary of all test data in the database using pandas
 
         Returns:
             dict: A JSON-serializable dictionary containing all test results
         """
-        # Get all test names
-        cursor = self.conn.execute("SELECT name FROM tests")
-        test_names = [row[0] for row in cursor.fetchall()]
-
+        # Get all results into a DataFrame
+        df = pd.read_sql_query(
+            """
+            SELECT 
+                test_name,
+                model,
+                duration,
+                accuracy,
+                tool_use,
+                tool_calls,
+                redundant_tool_calls,
+                clarity,
+                helpfulness,
+                overall,
+                hallucination_score,
+                false_claims
+            FROM eval_results
+            """,
+            self.conn
+        )
+        
+        if df.empty:
+            return {"tests": {}, "total": {"models": {}, "metrics": {}, "test_count": 0, "model_count": 0}}
+            
+        # Convert false_claims from JSON string
+        df['false_claims'] = df['false_claims'].apply(json.loads)
+        
+        # Calculate test-level metrics
+        test_metrics = df.groupby('test_name').agg({
+            'model': 'nunique',  # Count unique models per test
+            'accuracy': 'mean',
+            'tool_use': 'mean',
+            'tool_calls': 'sum',
+            'redundant_tool_calls': 'sum',
+            'clarity': 'mean',
+            'helpfulness': 'mean',
+            'overall': 'mean',
+            'hallucination_score': 'mean'
+        }).rename(columns={'model': 'model_count'})
+        
+        # Calculate model-level metrics for each test
+        model_metrics = df.groupby(['test_name', 'model']).agg({
+            'duration': 'mean',
+            'accuracy': 'mean',
+            'tool_use': 'mean',
+            'tool_calls': 'sum',
+            'redundant_tool_calls': 'sum',
+            'clarity': 'mean',
+            'helpfulness': 'mean',
+            'overall': 'mean',
+            'hallucination_score': 'mean',
+            'false_claims': lambda x: list(set([item for sublist in x for item in sublist]))
+        }).reset_index()
+        
+        # Calculate total metrics across all tests
+        total_metrics = df.agg({
+            'accuracy': 'mean',
+            'tool_use': 'mean',
+            'tool_calls': 'sum',
+            'redundant_tool_calls': 'sum',
+            'clarity': 'mean',
+            'helpfulness': 'mean',
+            'overall': 'mean',
+            'hallucination_score': 'mean'
+        }).to_dict()
+        
+        # Calculate total model metrics
+        total_model_metrics = df.groupby('model').agg({
+            'test_name': 'nunique',  # Count tests per model
+            'duration': 'mean',
+            'accuracy': 'mean',
+            'tool_use': 'mean',
+            'tool_calls': 'sum',
+            'redundant_tool_calls': 'sum',
+            'clarity': 'mean',
+            'helpfulness': 'mean',
+            'overall': 'mean',
+            'hallucination_score': 'mean'
+        }).rename(columns={'test_name': 'test_count'})
+        
+        # Build summary dictionary
         summary = {
             "tests": {},
             "total": {
                 "models": {},
-                "metrics": {
-                    "accuracy": 0.0,
-                    "tool_use": 0.0,
-                    "clarity": 0.0,
-                    "helpfulness": 0.0,
-                    "overall": 0.0,
-                    "hallucination_score": 0.0,
-                    "tool_calls": 0,
-                    "redundant_tool_calls": 0,
-                },
-                "test_count": len(test_names),
-                "model_count": 0,
+                "metrics": total_metrics,
+                "test_count": len(test_metrics),
+                "model_count": df['model'].nunique()
             },
+            "generated_at": datetime.now().isoformat()
         }
-
-        all_models = set()
-
-        # Process each test
-        for test_name in test_names:
-            results = self.average_results(test_name)
-
-            test_summary = {
-                "models": {},
-                "metrics": {
-                    "accuracy": 0.0,
-                    "tool_use": 0.0,
-                    "clarity": 0.0,
-                    "helpfulness": 0.0,
-                    "overall": 0.0,
-                    "hallucination_score": 0.0,
-                    "tool_calls": 0,
-                    "redundant_tool_calls": 0,
+        
+        # Add test summaries
+        for test_name in test_metrics.index:
+            test_models = model_metrics[model_metrics['test_name'] == test_name]
+            summary["tests"][test_name] = {
+                "models": {
+                    row['model']: {
+                        "accuracy": row['accuracy'],
+                        "tool_use": row['tool_use'],
+                        "clarity": row['clarity'],
+                        "helpfulness": row['helpfulness'],
+                        "overall": row['overall'],
+                        "hallucination_score": row['hallucination_score'],
+                        "tool_calls": int(row['tool_calls']),
+                        "redundant_tool_calls": int(row['redundant_tool_calls']),
+                        "duration": row['duration'],
+                        "false_claims": row['false_claims']
+                    }
+                    for _, row in test_models.iterrows()
                 },
-                "model_count": len(results.scores),
+                "metrics": test_metrics.loc[test_name].to_dict(),
+                "model_count": int(test_metrics.loc[test_name, 'model_count'])
             }
-
-            # Process each model's score for this test
-            for score in results.scores:
-                model_name = score.model
-                all_models.add(model_name)
-
-                # Add model data to test summary
-                test_summary["models"][model_name] = {
-                    "accuracy": score.accuracy,
-                    "tool_use": score.tool_use,
-                    "clarity": score.clarity,
-                    "helpfulness": score.helpfulness,
-                    "overall": score.overall,
-                    "hallucination_score": score.hallucination_score,
-                    "tool_calls": score.tool_calls,
-                    "redundant_tool_calls": score.redundant_tool_calls,
-                    "duration": score.duration,
-                    "false_claims": score.false_claims,
-                }
-
-                # Update test metrics totals
-                test_summary["metrics"]["accuracy"] += score.accuracy
-                test_summary["metrics"]["tool_use"] += score.tool_use
-                test_summary["metrics"]["clarity"] += score.clarity
-                test_summary["metrics"]["helpfulness"] += score.helpfulness
-                test_summary["metrics"]["overall"] += score.overall
-                test_summary["metrics"]["hallucination_score"] += (
-                    score.hallucination_score
-                )
-                test_summary["metrics"]["tool_calls"] += score.tool_calls
-                test_summary["metrics"]["redundant_tool_calls"] += (
-                    score.redundant_tool_calls
-                )
-
-            # Calculate test averages
-            if test_summary["model_count"] > 0:
-                for metric in test_summary["metrics"]:
-                    if metric in ["tool_calls", "redundant_tool_calls"]:
-                        # For integer metrics, we keep the sum
-                        continue
-                    test_summary["metrics"][metric] /= test_summary["model_count"]
-
-            # Add test to summary
-            summary["tests"][test_name] = test_summary
-
-        # Update total metrics
-        summary["total"]["model_count"] = len(all_models)
-
-        # Initialize model data in total summary
-        for model in all_models:
+        
+        # Add total model metrics
+        for model in total_model_metrics.index:
             summary["total"]["models"][model] = {
-                "accuracy": 0.0,
-                "tool_use": 0.0,
-                "clarity": 0.0,
-                "helpfulness": 0.0,
-                "overall": 0.0,
-                "hallucination_score": 0.0,
-                "tool_calls": 0,
-                "redundant_tool_calls": 0,
-                "test_count": 0,
-                "duration": 0.0,
+                **total_model_metrics.loc[model].to_dict(),
+                "test_count": int(total_model_metrics.loc[model, 'test_count'])
             }
-
-        # Calculate totals across all tests
-        for test_name, test_data in summary["tests"].items():
-            for model, model_data in test_data["models"].items():
-                summary["total"]["models"][model]["accuracy"] += model_data["accuracy"]
-                summary["total"]["models"][model]["tool_use"] += model_data["tool_use"]
-                summary["total"]["models"][model]["clarity"] += model_data["clarity"]
-                summary["total"]["models"][model]["helpfulness"] += model_data[
-                    "helpfulness"
-                ]
-                summary["total"]["models"][model]["overall"] += model_data["overall"]
-                summary["total"]["models"][model]["hallucination_score"] += model_data[
-                    "hallucination_score"
-                ]
-                summary["total"]["models"][model]["tool_calls"] += model_data[
-                    "tool_calls"
-                ]
-                summary["total"]["models"][model]["redundant_tool_calls"] += model_data[
-                    "redundant_tool_calls"
-                ]
-                summary["total"]["models"][model]["duration"] += model_data["duration"]
-                summary["total"]["models"][model]["test_count"] += 1
-
-        # Calculate model averages in total
-        for model, model_data in summary["total"]["models"].items():
-            test_count = model_data["test_count"]
-            if test_count > 0:
-                for metric in [
-                    "accuracy",
-                    "tool_use",
-                    "clarity",
-                    "helpfulness",
-                    "overall",
-                    "hallucination_score",
-                    "duration",
-                ]:
-                    model_data[metric] /= test_count
-
-        # Calculate overall metrics averages
-        if summary["total"]["test_count"] > 0:
-            for test_name, test_data in summary["tests"].items():
-                summary["total"]["metrics"]["accuracy"] += test_data["metrics"][
-                    "accuracy"
-                ]
-                summary["total"]["metrics"]["tool_use"] += test_data["metrics"][
-                    "tool_use"
-                ]
-                summary["total"]["metrics"]["clarity"] += test_data["metrics"][
-                    "clarity"
-                ]
-                summary["total"]["metrics"]["helpfulness"] += test_data["metrics"][
-                    "helpfulness"
-                ]
-                summary["total"]["metrics"]["overall"] += test_data["metrics"][
-                    "overall"
-                ]
-                summary["total"]["metrics"]["hallucination_score"] += test_data[
-                    "metrics"
-                ]["hallucination_score"]
-                summary["total"]["metrics"]["tool_calls"] += test_data["metrics"][
-                    "tool_calls"
-                ]
-                summary["total"]["metrics"]["redundant_tool_calls"] += test_data[
-                    "metrics"
-                ]["redundant_tool_calls"]
-
-            for metric in [
-                "accuracy",
-                "tool_use",
-                "clarity",
-                "helpfulness",
-                "overall",
-                "hallucination_score",
-            ]:
-                summary["total"]["metrics"][metric] /= summary["total"]["test_count"]
-
-        # Add timestamp
-        from datetime import datetime
-
-        summary["generated_at"] = datetime.now().isoformat()
-
+            
         return summary
 
     def average_results(self, name: str) -> Results:
