@@ -18,7 +18,9 @@ class Judge:
     db: Database
 
     def __init__(
-        self, models: List[Model | str] | None = None, db: Database | None = None
+        self,
+        models: List[Model | str] | None = None,
+        db: Database | None = None,
     ):
         self.db = db or Database()
         self.agent = Agent(
@@ -29,13 +31,15 @@ class Judge:
             for model in models:
                 self.add_model(model)
 
-    def add_model(self, model: Model | str):
+    def add_model(self, model: Model | str, profile: str | None = None):
         if isinstance(model, str):
             model = Model(name=model, config=ChatConfig(model=model))
         model.config.model = model.name
         if model.config.client is None:
             model.config.client = self.agent.client
         model.config.system = TEST_PROMPT
+        if profile is not None:
+            model.config.client.set_profile(profile)
         self.models.append(model)
 
     async def run_test(self, test: Test, save=True) -> Results:

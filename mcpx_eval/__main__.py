@@ -172,6 +172,13 @@ async def run():
         help="Model to include in test",
         action="append",
     )
+    test_parser.add_argument(
+        "--profile",
+        "-p",
+        default=None,
+        help="Profile to use for all models",
+    )
+
     test_parser.add_argument("--prompt", help="Test prompt")
     test_parser.add_argument("--check", help="Test check")
     test_parser.add_argument(
@@ -180,6 +187,7 @@ async def run():
     test_parser.add_argument("--config", help="Test config file")
     test_parser.add_argument(
         "--iter",
+        "-i",
         default=1,
         type=int,
         help="Number of times to run the test for each model",
@@ -293,7 +301,14 @@ async def run():
         if hasattr(args, "config") and args.config is not None:
             test = Test.load(args.config)
             for model in args.model:
-                test.models.append(model)
+                if args.profile:
+                    if "/" in model:
+                        a, _ = model.split("/", maxsplit=1)
+                        test.models.append(f"{a}/{args.profile}")
+                    else:
+                        test.models.append(f"{model}/{args.profile}")
+                else:
+                    test.models.append(model)
             if args.name is None or args.name == "":
                 args.name = test.name
 
