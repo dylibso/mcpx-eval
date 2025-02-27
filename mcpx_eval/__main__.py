@@ -12,45 +12,74 @@ logger = logging.getLogger(__name__)
 
 
 def print_result(result):
-    print()
-    print(f"{result.model}")
+    # Print model header
+    print(f"\n{result.model}")
     print("=" * len(result.model))
-    print()
-    print(f"Time: {result.duration}s")
-    print("Output:")
+    
+    # Create a DataFrame for the metrics
+    metrics_df = pd.DataFrame({
+        'Metric': [
+            'Duration (s)', 
+            'Tool Calls',
+            'Redundant Calls',
+            'Tool Use %',
+            'Accuracy %',
+            'Clarity %',
+            'Helpfulness %',
+            'Overall %',
+            'Hallucination Score'
+        ],
+        'Value': [
+            f"{result.duration:.2f}",
+            result.tool_calls,
+            result.redundant_tool_calls,
+            f"{result.tool_use:.1f}",
+            f"{result.accuracy:.1f}",
+            f"{result.clarity:.1f}",
+            f"{result.helpfulness:.1f}",
+            f"{result.overall:.1f}",
+            f"{result.hallucination_score:.1f}"
+        ]
+    })
+    
+    # Print metrics table
+    print("\nMetrics:")
+    print(metrics_df.to_string(index=False))
+    
+    # Print output and description
+    print("\nOutput:")
     print(result.llm_output)
-    print()
-    print("Score:")
+    print("\nDescription:")
     print(result.description)
-
-    print("Number of tool calls:", result.tool_calls)
-    if result.redundant_tool_calls > 0:
-        print("Redundant tool calls:", result.redundant_tool_calls)
-    print("Tool use:", result.tool_use)
-    print("Accuracy:", result.accuracy)
-    print("Clarity:", result.clarity)
-    print("Helpfulness:", result.helpfulness)
-
-    # Hallucination metrics
-    print("Hallucination score:", result.hallucination_score)
+    
+    # Print false claims if any
     if result.false_claims and len(result.false_claims) > 0:
-        print("False claims detected:")
+        print("\nFalse Claims Detected:")
         for claim in result.false_claims:
             print(f"  - {claim}")
-
-    # Tool analysis
+    
+    # Print tool analysis if any
     if result.tool_analysis and len(result.tool_analysis) > 0:
-        print("\nTool analysis:")
+        print("\nTool Analysis:")
+        tool_data = []
         for tool_id, analysis in result.tool_analysis.items():
             if isinstance(analysis, list):
                 for a in analysis:
-                    print(f"  {tool_id}: {a['name']}")
-                    print(f"    - Redundancy: {a['redundancy']}")
+                    tool_data.append({
+                        'Tool ID': tool_id,
+                        'Name': a['name'],
+                        'Redundancy': a['redundancy']
+                    })
             else:
-                print(f"  {tool_id}: {analysis['name']}")
-                print(f"    - Redundancy: {analysis['redundancy']}")
-
-    print("\nOverall score:", result.overall)
+                tool_data.append({
+                    'Tool ID': tool_id,
+                    'Name': analysis['name'],
+                    'Redundancy': analysis['redundancy']
+                })
+        
+        if tool_data:
+            tool_df = pd.DataFrame(tool_data)
+            print(tool_df.to_string(index=False))
 
 
 def summary(args):

@@ -229,23 +229,43 @@ class Database:
             self.conn
         )
         
-        # Convert DataFrame to nested dictionary structure
+        # Use pandas styling to create formatted HTML tables
+        def style_table(df):
+            return df.style\
+                .format({
+                    'accuracy': '{:.1f}%',
+                    'tool_use': '{:.1f}%',
+                    'clarity': '{:.1f}%',
+                    'helpfulness': '{:.1f}%',
+                    'overall': '{:.1f}%',
+                    'hallucination_score': '{:.1f}%'
+                })\
+                .background_gradient(subset=['accuracy', 'tool_use', 'clarity', 'helpfulness', 'overall'], cmap='RdYlGn')\
+                .background_gradient(subset=['hallucination_score'], cmap='RdYlGn_r')\
+                .set_properties(**{'text-align': 'center'})\
+                .to_html()
+    
+        # Generate HTML tables for each test
         summary = {}
         for test_name in df['test_name'].unique():
             test_df = df[df['test_name'] == test_name]
+            test_df = test_df.sort_values('overall', ascending=False)
             summary[test_name] = {
-                row['model']: {
-                    'accuracy': row['accuracy'],
-                    'tool_use': row['tool_use'],
-                    'tool_calls': row['tool_calls'],
-                    'redundant_tool_calls': row['redundant_tool_calls'],
-                    'clarity': row['clarity'],
-                    'helpfulness': row['helpfulness'],
-                    'overall': row['overall'],
-                    'hallucination_score': row['hallucination_score'],
-                    'runs': row['runs']
+                'table': style_table(test_df),
+                'models': {
+                    row['model']: {
+                        'accuracy': row['accuracy'],
+                        'tool_use': row['tool_use'],
+                        'tool_calls': row['tool_calls'],
+                        'redundant_tool_calls': row['redundant_tool_calls'],
+                        'clarity': row['clarity'],
+                        'helpfulness': row['helpfulness'],
+                        'overall': row['overall'],
+                        'hallucination_score': row['hallucination_score'],
+                        'runs': row['runs']
+                    }
+                    for _, row in test_df.iterrows()
                 }
-                for _, row in test_df.iterrows()
             }
         
         return summary

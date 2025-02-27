@@ -1,6 +1,7 @@
 from mcpx_pydantic_ai import BaseModel, Field
 from typing import List
 import json
+import pandas as pd
 from dataclasses import dataclass
 from mcpx_py import ChatConfig
 
@@ -37,6 +38,26 @@ class Score(BaseModel):
 class Results(BaseModel):
     scores: List[Score] = Field("A list of scores for each model")
     duration: float = Field("Total duration of all tests")
+    
+    def to_dataframe(self) -> pd.DataFrame:
+        """Convert results to a pandas DataFrame for analysis"""
+        records = []
+        for score in self.scores:
+            record = {
+                'model': score.model,
+                'duration': score.duration,
+                'tool_use': score.tool_use,
+                'tool_calls': score.tool_calls,
+                'accuracy': score.accuracy,
+                'clarity': score.clarity,
+                'helpfulness': score.helpfulness,
+                'overall': score.overall,
+                'hallucination_score': score.hallucination_score,
+                'redundant_tool_calls': score.redundant_tool_calls,
+                'false_claims_count': len(score.false_claims)
+            }
+            records.append(record)
+        return pd.DataFrame(records)
 
 class Test:
     name: str
