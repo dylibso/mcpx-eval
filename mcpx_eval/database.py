@@ -258,7 +258,7 @@ class Database:
                         "tool_calls": "{:.1f}",
                         "redundant_tool_calls": "{:.1f}",
                         "runs": "{:.0f}",
-                        "duration": "{:.3f}"
+                        "duration": "{:.3f}",
                     }
                 )
                 .background_gradient(
@@ -283,30 +283,13 @@ class Database:
                 "models": {},
                 "metrics": {},
                 "test_count": len(df["test_name"].unique()),
-                "model_count": len(df["model"].unique())
-            }
+                "model_count": len(df["model"].unique()),
+            },
         }
 
         # Calculate total metrics with formatted precision
-        total_metrics = df.agg({
-            "accuracy": lambda x: round(x.mean(), 3),
-            "tool_use": lambda x: round(x.mean(), 3),
-            "tool_calls": lambda x: round(x.sum(), 1),
-            "redundant_tool_calls": lambda x: round(x.sum(), 1),
-            "clarity": lambda x: round(x.mean(), 3),
-            "helpfulness": lambda x: round(x.mean(), 3),
-            "overall": lambda x: round(x.mean(), 3),
-            "hallucination_score": lambda x: round(x.mean(), 3)
-        })
-        summary["total"]["metrics"] = total_metrics.to_dict()
-
-        # Process each test
-        for test_name in df["test_name"].unique():
-            test_df = df[df["test_name"] == test_name]
-            test_df = test_df.sort_values("overall", ascending=False)
-            
-            # Calculate test metrics with formatted precision
-            test_metrics = test_df.agg({
+        total_metrics = df.agg(
+            {
                 "accuracy": lambda x: round(x.mean(), 3),
                 "tool_use": lambda x: round(x.mean(), 3),
                 "tool_calls": lambda x: round(x.sum(), 1),
@@ -314,15 +297,38 @@ class Database:
                 "clarity": lambda x: round(x.mean(), 3),
                 "helpfulness": lambda x: round(x.mean(), 3),
                 "overall": lambda x: round(x.mean(), 3),
-                "hallucination_score": lambda x: round(x.mean(), 3)
-            })
-            
+                "hallucination_score": lambda x: round(x.mean(), 3),
+            }
+        )
+        summary["total"]["metrics"] = total_metrics.to_dict()
+
+        # Process each test
+        for test_name in df["test_name"].unique():
+            test_df = df[df["test_name"] == test_name]
+            test_df = test_df.sort_values("overall", ascending=False)
+
+            # Calculate test metrics with formatted precision
+            test_metrics = test_df.agg(
+                {
+                    "accuracy": lambda x: round(x.mean(), 3),
+                    "tool_use": lambda x: round(x.mean(), 3),
+                    "tool_calls": lambda x: round(x.sum(), 1),
+                    "redundant_tool_calls": lambda x: round(x.sum(), 1),
+                    "clarity": lambda x: round(x.mean(), 3),
+                    "helpfulness": lambda x: round(x.mean(), 3),
+                    "overall": lambda x: round(x.mean(), 3),
+                    "hallucination_score": lambda x: round(x.mean(), 3),
+                }
+            )
+
             # Round tool calls in test metrics to 1 decimal place
-            if 'tool_calls' in test_metrics:
-                test_metrics['tool_calls'] = round(test_metrics['tool_calls'], 1)
-            if 'redundant_tool_calls' in test_metrics:
-                test_metrics['redundant_tool_calls'] = round(test_metrics['redundant_tool_calls'], 1)
-            
+            if "tool_calls" in test_metrics:
+                test_metrics["tool_calls"] = round(test_metrics["tool_calls"], 1)
+            if "redundant_tool_calls" in test_metrics:
+                test_metrics["redundant_tool_calls"] = round(
+                    test_metrics["redundant_tool_calls"], 1
+                )
+
             summary["tests"][test_name] = {
                 "models": {
                     row["model"]: {
@@ -339,7 +345,7 @@ class Database:
                     for _, row in test_df.iterrows()
                 },
                 "metrics": test_metrics.to_dict(),
-                "model_count": len(test_df["model"].unique())
+                "model_count": len(test_df["model"].unique()),
             }
 
             # Update total models data
@@ -356,20 +362,40 @@ class Database:
                         "overall": 0.0,
                         "hallucination_score": 0.0,
                         "test_count": 0,
-                        "duration": 0.0
+                        "duration": 0.0,
                     }
-                
+
                 summary["total"]["models"][model]["test_count"] += 1
-                for metric in ["accuracy", "tool_use", "clarity", "helpfulness", "overall", "hallucination_score", "duration"]:
+                for metric in [
+                    "accuracy",
+                    "tool_use",
+                    "clarity",
+                    "helpfulness",
+                    "overall",
+                    "hallucination_score",
+                    "duration",
+                ]:
                     summary["total"]["models"][model][metric] += model_data[metric]
-                summary["total"]["models"][model]["tool_calls"] += model_data["tool_calls"]
-                summary["total"]["models"][model]["redundant_tool_calls"] += model_data["redundant_tool_calls"]
+                summary["total"]["models"][model]["tool_calls"] += model_data[
+                    "tool_calls"
+                ]
+                summary["total"]["models"][model]["redundant_tool_calls"] += model_data[
+                    "redundant_tool_calls"
+                ]
 
         # Calculate averages for total model metrics
         for model in summary["total"]["models"]:
             test_count = summary["total"]["models"][model]["test_count"]
             if test_count > 0:
-                for metric in ["accuracy", "tool_use", "clarity", "helpfulness", "overall", "hallucination_score", "duration"]:
+                for metric in [
+                    "accuracy",
+                    "tool_use",
+                    "clarity",
+                    "helpfulness",
+                    "overall",
+                    "hallucination_score",
+                    "duration",
+                ]:
                     summary["total"]["models"][model][metric] /= test_count
 
         # Add timestamp

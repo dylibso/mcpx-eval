@@ -11,14 +11,19 @@ from .constants import SYSTEM_PROMPT, TEST_PROMPT
 
 logger = logging.getLogger(__name__)
 
+
 class Judge:
     agent: Agent
     models: List[Model]
     db: Database
 
-    def __init__(self, models: List[Model | str] | None = None, db: Database | None = None):
+    def __init__(
+        self, models: List[Model | str] | None = None, db: Database | None = None
+    ):
         self.db = db or Database()
-        self.agent = Agent("claude-3-5-sonnet-latest", result_type=Score, system_prompt=SYSTEM_PROMPT)
+        self.agent = Agent(
+            "claude-3-5-sonnet-latest", result_type=Score, system_prompt=SYSTEM_PROMPT
+        )
         self.models = []
         if models is not None:
             for model in models:
@@ -34,7 +39,9 @@ class Judge:
         self.models.append(model)
 
     async def run_test(self, test: Test, save=True) -> Results:
-        results = await self.run(test.prompt, test.check, max_tool_calls=test.max_tool_calls)
+        results = await self.run(
+            test.prompt, test.check, max_tool_calls=test.max_tool_calls
+        )
         if save:
             self.db.save_results(test.name, results)
         return results
@@ -48,25 +55,23 @@ class Judge:
             if model.name in model_cache:
                 chat = model_cache[model.name]
             else:
-                if "claude" in model.name:
+                if model.provider == "anthropic":
                     chat = Chat(Claude(config=model.config))
-                elif (
-                    model.name in ["gpt-4o", "o1", "o1-mini", "o3-mini", "o3"]
-                    or "gpt-3.5" in model.name
-                    or "gpt-4" in model.name
-                ):
+                elif model.provider == "openai":
                     chat = Chat(OpenAI(config=model.config))
-                elif "gemini" in model.name:
+                elif model.provider == "google":
                     chat = Chat(Gemini(config=model.config))
-                else:
+                elif model.provider == "ollama":
                     model.config.system = """
                     You are a helpful large language model with tool calling access. Use the available tools
                     to determine results you cannot answer on your own
                     """
                     chat = Chat(Ollama(config=model.config))
+                else:
+                    logger.error(f"Skipping invalid model provider: {model.provider}")
                 model_cache[model.name] = chat
             start = datetime.now()
-            result = {"model": model.name, "messages": []}
+            result = {"model": model.slug, "messages": []}
             tool_calls = 0
             try:
                 async for response in chat.send_message(prompt):

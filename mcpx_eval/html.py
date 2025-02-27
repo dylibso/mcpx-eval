@@ -146,7 +146,7 @@ def visualize_json(data, output_path=None):
         </style>
     </head>
     <body>
-        <h1>mcpx-eval Scoreboard</h1>
+        <h1>mcpx-eval Open-Ended Tool Calling Scoreboard</h1>
         <div class="timestamp">Generated on: """
         + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         + """</div>
