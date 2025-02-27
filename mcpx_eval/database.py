@@ -271,13 +271,48 @@ class Database:
                 .to_html()
             )
 
-        # Generate HTML tables for each test
-        summary = {}
+        # Generate summary structure
+        summary = {
+            "tests": {},
+            "total": {
+                "models": {},
+                "metrics": {},
+                "test_count": len(df["test_name"].unique()),
+                "model_count": len(df["model"].unique())
+            }
+        }
+
+        # Calculate total metrics
+        total_metrics = df.agg({
+            "accuracy": "mean",
+            "tool_use": "mean",
+            "tool_calls": "sum",
+            "redundant_tool_calls": "sum",
+            "clarity": "mean",
+            "helpfulness": "mean",
+            "overall": "mean",
+            "hallucination_score": "mean"
+        })
+        summary["total"]["metrics"] = total_metrics.to_dict()
+
+        # Process each test
         for test_name in df["test_name"].unique():
             test_df = df[df["test_name"] == test_name]
             test_df = test_df.sort_values("overall", ascending=False)
-            summary[test_name] = {
-                "table": style_table(test_df),
+            
+            # Calculate test metrics
+            test_metrics = test_df.agg({
+                "accuracy": "mean",
+                "tool_use": "mean",
+                "tool_calls": "sum",
+                "redundant_tool_calls": "sum",
+                "clarity": "mean",
+                "helpfulness": "mean",
+                "overall": "mean",
+                "hallucination_score": "mean"
+            })
+            
+            summary["tests"][test_name] = {
                 "models": {
                     row["model"]: {
                         "accuracy": row["accuracy"],
@@ -292,6 +327,41 @@ class Database:
                     }
                     for _, row in test_df.iterrows()
                 },
+                "metrics": test_metrics.to_dict(),
+                "model_count": len(test_df["model"].unique())
             }
+
+            # Update total models data
+            for model in test_df["model"].unique():
+                model_data = test_df[test_df["model"] == model].iloc[0]
+                if model not in summary["total"]["models"]:
+                    summary["total"]["models"][model] = {
+                        "accuracy": 0.0,
+                        "tool_use": 0.0,
+                        "tool_calls": 0,
+                        "redundant_tool_calls": 0,
+                        "clarity": 0.0,
+                        "helpfulness": 0.0,
+                        "overall": 0.0,
+                        "hallucination_score": 0.0,
+                        "test_count": 0,
+                        "duration": 0.0
+                    }
+                
+                summary["total"]["models"][model]["test_count"] += 1
+                for metric in ["accuracy", "tool_use", "clarity", "helpfulness", "overall", "hallucination_score"]:
+                    summary["total"]["models"][model][metric] += model_data[metric]
+                summary["total"]["models"][model]["tool_calls"] += model_data["tool_calls"]
+                summary["total"]["models"][model]["redundant_tool_calls"] += model_data["redundant_tool_calls"]
+
+        # Calculate averages for total model metrics
+        for model in summary["total"]["models"]:
+            test_count = summary["total"]["models"][model]["test_count"]
+            if test_count > 0:
+                for metric in ["accuracy", "tool_use", "clarity", "helpfulness", "overall", "hallucination_score"]:
+                    summary["total"]["models"][model][metric] /= test_count
+
+        # Add timestamp
+        summary["generated_at"] = datetime.now().isoformat()
 
         return summary
