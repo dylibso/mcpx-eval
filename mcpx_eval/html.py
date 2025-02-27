@@ -154,7 +154,7 @@ def visualize_json(data, output_path=None):
             // Format number as percentage
             function formatPercent(value) {
                 if (typeof value !== 'number') return 'N/A';
-                return value.toFixed(2) + '%';
+                return value.toFixed(3) + '%';
             }
             
             // Find best and worst values in an array
@@ -308,7 +308,7 @@ def visualize_json(data, output_path=None):
                     
                     // Duration
                     const durationCell = document.createElement('td');
-                    durationCell.textContent = (model.duration || 0).toFixed(1);
+                    durationCell.textContent = (model.duration || 0).toFixed(3);
                     if (model.duration === bestWorst.duration.best) durationCell.className = 'best';
                     else if (bestWorst.duration.best !== bestWorst.duration.worst && 
                             model.duration === bestWorst.duration.worst) durationCell.className = 'worst';
@@ -316,7 +316,7 @@ def visualize_json(data, output_path=None):
 
                     // Tool Calls
                     const toolCallsCell = document.createElement('td');
-                    toolCallsCell.textContent = model.tool_calls || 0;
+                    toolCallsCell.textContent = (model.tool_calls || 0).toFixed(1);
                     row.appendChild(toolCallsCell);
                     
                     // Test Count
