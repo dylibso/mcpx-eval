@@ -4,6 +4,7 @@ import asyncio
 import logging
 import json
 import os
+import pandas as pd
 from datetime import datetime
 from tempfile import NamedTemporaryFile
 import webbrowser
