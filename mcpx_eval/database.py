@@ -236,6 +236,7 @@ class Database:
                 AVG(helpfulness) as helpfulness,
                 AVG(overall) as overall,
                 AVG(hallucination_score) as hallucination_score,
+                AVG(duration) as duration,
                 COUNT(*) as runs
             FROM eval_results
             GROUP BY test_name, model
@@ -353,7 +354,7 @@ class Database:
                     }
                 
                 summary["total"]["models"][model]["test_count"] += 1
-                for metric in ["accuracy", "tool_use", "clarity", "helpfulness", "overall", "hallucination_score"]:
+                for metric in ["accuracy", "tool_use", "clarity", "helpfulness", "overall", "hallucination_score", "duration"]:
                     summary["total"]["models"][model][metric] += model_data[metric]
                 summary["total"]["models"][model]["tool_calls"] += model_data["tool_calls"]
                 summary["total"]["models"][model]["redundant_tool_calls"] += model_data["redundant_tool_calls"]
@@ -362,7 +363,7 @@ class Database:
         for model in summary["total"]["models"]:
             test_count = summary["total"]["models"][model]["test_count"]
             if test_count > 0:
-                for metric in ["accuracy", "tool_use", "clarity", "helpfulness", "overall", "hallucination_score"]:
+                for metric in ["accuracy", "tool_use", "clarity", "helpfulness", "overall", "hallucination_score", "duration"]:
                     summary["total"]["models"][model][metric] /= test_count
 
         # Add timestamp
