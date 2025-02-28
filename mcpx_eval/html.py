@@ -175,6 +175,7 @@ def visualize_json(data, output_path=None):
                                     <th>Hallucination</th>
                                     <th>Duration (s)</th>
                                     <th>Tool Calls</th>
+                                    <th>Redundant Calls</th>
                                     <th>Failed Calls</th>
                                 </tr>
                             </thead>
@@ -368,6 +369,11 @@ def visualize_json(data, output_path=None):
                     const toolCallsCell = document.createElement('td');
                     toolCallsCell.textContent = (model.tool_calls || 0).toFixed(1);
                     row.appendChild(toolCallsCell);
+
+                    // Redundant Calls
+                    const redundantCallsCell = document.createElement('td');
+                    redundantCallsCell.textContent = (model.redundant_tool_calls || 0).toFixed(1);
+                    row.appendChild(redundantCallsCell);
 
                     // Failed Calls
                     const failedCallsCell = document.createElement('td');
