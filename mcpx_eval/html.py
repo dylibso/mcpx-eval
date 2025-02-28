@@ -169,7 +169,6 @@ def visualize_json(data, output_path=None):
                                     <th>Combined Score</th>
                                     <th>Accuracy</th>
                                     <th>Tool Use</th>
-                                    <th>Clarity</th>
                                     <th>Completeness</th>
                                     <th>Quality</th>
                                     <th>Hallucination</th>
@@ -244,7 +243,6 @@ def visualize_json(data, output_path=None):
                     const avgScore = calculateAverage([
                         data.accuracy,
                         data.tool_use,
-                        data.clarity,
                         data.helpfulness,
                         data.quality
                     ]);
@@ -264,7 +262,6 @@ def visualize_json(data, output_path=None):
                     avgScore: models.map(m => m.avgScore),
                     accuracy: models.map(m => m.accuracy),
                     tool_use: models.map(m => m.tool_use),
-                    clarity: models.map(m => m.clarity),
                     helpfulness: models.map(m => m.helpfulness),
                     quality: models.map(m => m.quality),
                     hallucination_score: models.map(m => m.hallucination_score),
@@ -279,7 +276,6 @@ def visualize_json(data, output_path=None):
                     avgScore: findBestWorst(allValues.avgScore),
                     accuracy: findBestWorst(allValues.accuracy),
                     tool_use: findBestWorst(allValues.tool_use),
-                    clarity: findBestWorst(allValues.clarity),
                     helpfulness: findBestWorst(allValues.helpfulness),
                     quality: findBestWorst(allValues.quality),
                     hallucination_score: findBestWorst(allValues.hallucination_score, false),
@@ -327,14 +323,6 @@ def visualize_json(data, output_path=None):
                     else if (bestWorst.tool_use.best !== bestWorst.tool_use.worst &&
                             model.tool_use === bestWorst.tool_use.worst) toolUseCell.className = 'worst';
                     row.appendChild(toolUseCell);
-
-                    // Clarity
-                    const clarityCell = document.createElement('td');
-                    clarityCell.textContent = formatPercent(model.clarity);
-                    if (model.clarity === bestWorst.clarity.best) clarityCell.className = 'best';
-                    else if (bestWorst.clarity.best !== bestWorst.clarity.worst &&
-                            model.clarity === bestWorst.clarity.worst) clarityCell.className = 'worst';
-                    row.appendChild(clarityCell);
 
                     // Completeness
                     const completenessCell = document.createElement('td');
@@ -421,7 +409,6 @@ def visualize_json(data, output_path=None):
                         const avgScore = calculateAverage([
                             data.accuracy,
                             data.tool_use,
-                            data.clarity,
                             data.helpfulness,
                             data.quality
                         ]);
@@ -441,7 +428,6 @@ def visualize_json(data, output_path=None):
                         avgScore: models.map(m => m.avgScore),
                         accuracy: models.map(m => m.accuracy),
                         tool_use: models.map(m => m.tool_use),
-                        clarity: models.map(m => m.clarity),
                         helpfulness: models.map(m => m.helpfulness),
                         quality: models.map(m => m.quality),
                         hallucination_score: models.map(m => m.hallucination_score),
@@ -456,7 +442,6 @@ def visualize_json(data, output_path=None):
                         avgScore: findBestWorst(allValues.avgScore),
                         accuracy: findBestWorst(allValues.accuracy),
                         tool_use: findBestWorst(allValues.tool_use),
-                        clarity: findBestWorst(allValues.clarity),
                         helpfulness: findBestWorst(allValues.helpfulness),
                         quality: findBestWorst(allValues.quality),
                         hallucination_score: findBestWorst(allValues.hallucination_score, false),
@@ -473,7 +458,7 @@ def visualize_json(data, output_path=None):
                     const thead = document.createElement('thead');
                     const headerRow = document.createElement('tr');
 
-                    ['Rank', 'Model', 'Combined Score', 'Accuracy', 'Tool Use', 'Clarity', 'Completeness', 'Quality',
+                    ['Rank', 'Model', 'Combined Score', 'Accuracy', 'Tool Use', 'Completeness', 'Quality',
                      'Hallucination', 'Duration (s)', 'Tool Calls', 'Redundant Calls', 'Failed Calls'].forEach(header => {
                         const th = document.createElement('th');
                         th.textContent = header;
@@ -527,15 +512,6 @@ def visualize_json(data, output_path=None):
                                 model.tool_use === bestWorst.tool_use.worst &&
                                 (bestWorst.tool_use.best - model.tool_use) >= 30) toolUseCell.className = 'worst';
                         row.appendChild(toolUseCell);
-
-                        // Clarity
-                        const clarityCell = document.createElement('td');
-                        clarityCell.textContent = formatPercent(model.clarity);
-                        if (model.clarity === bestWorst.clarity.best) clarityCell.className = 'best';
-                        else if (bestWorst.clarity.best !== bestWorst.clarity.worst &&
-                                model.clarity === bestWorst.clarity.worst &&
-                                (bestWorst.clarity.best - model.clarity) >= 30) clarityCell.className = 'worst';
-                        row.appendChild(clarityCell);
 
                         // Completeness
                         const completenessCell = document.createElement('td');
