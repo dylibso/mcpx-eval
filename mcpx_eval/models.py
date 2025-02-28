@@ -107,17 +107,17 @@ class Score(BaseModel):
     def to_dataframe(self) -> pd.DataFrame:
         """Convert results to a pandas DataFrame for analysis"""
         record = {
-            "model": score.model,
-            "duration": score.duration,
-            "tool_use": score.tool_use,
-            "tool_calls": score.tool_calls,
-            "accuracy": score.accuracy,
-            "clarity": score.clarity,
-            "helpfulness": score.helpfulness,
-            "overall": score.overall,
-            "hallucination_score": score.hallucination_score,
-            "redundant_tool_calls": score.redundant_tool_calls,
-            "false_claims_count": len(score.false_claims),
+            "model": self.model,
+            "duration": self.duration,
+            "tool_use": self.tool_use,
+            "tool_calls": self.tool_calls,
+            "accuracy": self.accuracy,
+            "clarity": self.clarity,
+            "helpfulness": self.helpfulness,
+            "overall": self.overall,
+            "hallucination_score": self.hallucination_score,
+            "redundant_tool_calls": self.redundant_tool_calls,
+            "false_claims_count": len(self.false_claims),
         }
         return pd.DataFrame(record)
 
