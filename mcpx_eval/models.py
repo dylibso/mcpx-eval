@@ -10,28 +10,30 @@ def parse_model(m: str) -> (str, str, str):
         provider, name = m.split(":", maxsplit=1)
     else:
         name = m
+        provider = None
 
     if "/" in name:
         name, profile = name.split("/", maxsplit=1)
-        if '/' not in profile:
+        if "/" not in profile:
             profile = "~/" + profile
     else:
         profile = "~/default"
-    if "claude" in name:
-        provider = "anthropic"
-    elif (
-        name in ["gpt-4o", "o1", "o1-mini", "o3-mini", "o3"]
-        or "gpt-3.5" in name
-        or "gpt-4" in name
-        or "gpt-4.5" in name
 
-    ):
-        provider = "openai"
+    if provider is None:
+        if "claude" in name:
+            provider = "anthropic"
+        elif (
+            name in ["gpt-4o", "o1", "o1-mini", "o3-mini", "o3"]
+            or "gpt-3.5" in name
+            or "gpt-4" in name
+            or "gpt-4.5" in name
+        ):
+            provider = "openai"
 
-    elif "gemini" in name:
-        provider = "google"
-    else:
-        provider = "ollama"
+        elif "gemini" in name:
+            provider = "google"
+        else:
+            provider = "ollama"
     return (provider, name, profile)
 
 
@@ -55,7 +57,7 @@ class Model:
         if self.profile == "default" or self.profile == "~/default":
             return self.name
         if self.profile.startswith("~/"):
-            return f"{self.name}/{self.profile.split("/", maxsplit=1)[1]}"
+            return f"{self.name}/{self.profile.split('/', maxsplit=1)[1]}"
         return f"{self.name}/{self.profile}"
 
 
@@ -73,12 +75,18 @@ class Score(BaseModel):
 
     # Core metrics
     tool_use: float = Field("A score (0-100) of how appropriate the tool use is")
-    tool_calls: int = Field("Number of tool calls")
-    accuracy: float = Field("A score (0-100) of how accurate the response is")
-    clarity: float = Field("A score (0-100) of how clear and understandable the response is")
-    helpfulness: float = Field("A score (0-100) of how helpful the response is to the user")
-    overall: float = Field(
-        "An overall score (0-100) of the quality of the response, this may include things not included in the other scores"
+    tool_calls: int = Field("Number of tool calls used")
+    accuracy: float = Field(
+        "A score (0-100) of how accurate the response is based on the output of the tool calls"
+    )
+    clarity: float = Field(
+        "A score (0-100) of how clear and understandable the response is, this includes making sure the formatting is correct"
+    )
+    completeness: float = Field(
+        "A score (0-100) of how complete the response is according to the check criteria"
+    )
+    quality: float = Field(
+        "A score (0-100) of the overall quality of the response, this may include things not included in the other scores"
     )
 
     # Hallucination metrics
@@ -99,10 +107,7 @@ class Score(BaseModel):
     redundant_tool_calls: int = Field(
         0, description="Number of redundant or unnecessary tool calls"
     )
-    failed_tool_calls: int = Field(
-        0, description="Number of failed tool calls"
-    )
-
+    failed_tool_calls: int = Field(0, description="Number of failed tool calls")
 
     def to_dataframe(self) -> pd.DataFrame:
         """Convert results to a pandas DataFrame for analysis"""
@@ -113,8 +118,8 @@ class Score(BaseModel):
             "tool_calls": self.tool_calls,
             "accuracy": self.accuracy,
             "clarity": self.clarity,
-            "helpfulness": self.helpfulness,
-            "overall": self.overall,
+            "helpfulness": self.completeness,
+            "overall": self.overall_quality,
             "hallucination_score": self.hallucination_score,
             "redundant_tool_calls": self.redundant_tool_calls,
             "false_claims_count": len(self.false_claims),
@@ -138,6 +143,7 @@ class Test:
     name: str
     prompt: str
     check: str
+    expected_tools: List[str]
     models: List[str]
     max_tool_calls: int | None
 
@@ -147,12 +153,14 @@ class Test:
         prompt: str,
         check: str,
         models: List[str],
+        expected_tools: List[str],
         max_tool_calls: int | None = None,
     ):
         self.name = name
         self.prompt = prompt
         self.check = check
         self.models = models
+        self.expected_tools = expected_tools
         self.max_tool_calls = max_tool_calls
 
     @staticmethod
@@ -164,17 +172,25 @@ class Test:
             s = f.read()
         data = tomllib.loads(s)
         if "import" in data:
-            t = Test.load(os.path.join(os.path.dirname(path), data["import"]))
-            t.name = data.get("name", t.name)
-            t.prompt = data.get("prompt", t.prompt)
-            t.check = data.get("check", t.check)
-            t.models = data.get("models", t.models)
-            t.max_tool_calls = data.get("max-tool-calls", t.max_tool_calls)
+            imports = data["import"]
+            if isinstance(imports, str):
+                imports = [imports]
+            t = None
+            for imp in imports:
+                if t is None:
+                    t = Test.load(os.path.join(os.path.dirname(path), imp))
+                t.name = data.get("name", t.name)
+                t.prompt = data.get("prompt", t.prompt)
+                t.check = data.get("check", t.check)
+                t.models = data.get("models", t.models)
+                t.max_tool_calls = data.get("max-tool-calls", t.max_tool_calls)
+                t.expected_tools.extend(data.get("expected-tools", []))
             return t
         return Test(
             data.get("name", path),
-            data["prompt"],
-            data["check"],
+            data.get("prompt", ""),
+            data.get("check", ""),
             data.get("models", []),
+            data.get("expected-tools", []),
             max_tool_calls=data.get("max-tool-calls"),
         )
