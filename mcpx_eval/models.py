@@ -119,7 +119,7 @@ class Score(BaseModel):
             "accuracy": self.accuracy,
             "clarity": self.clarity,
             "helpfulness": self.completeness,
-            "overall": self.overall_quality,
+            "quality": self.quality,
             "hallucination_score": self.hallucination_score,
             "redundant_tool_calls": self.redundant_tool_calls,
             "false_claims_count": len(self.false_claims),

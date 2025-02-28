@@ -171,7 +171,7 @@ def visualize_json(data, output_path=None):
                                     <th>Tool Use</th>
                                     <th>Clarity</th>
                                     <th>Completeness</th>
-                                    <th>Overall</th>
+                                    <th>Quality</th>
                                     <th>Hallucination</th>
                                     <th>Duration (s)</th>
                                     <th>Tool Calls</th>
@@ -423,7 +423,7 @@ def visualize_json(data, output_path=None):
                             data.tool_use,
                             data.clarity,
                             data.helpfulness,
-                            data.overall
+                            data.quality
                         ]);
 
                         return {
@@ -546,14 +546,14 @@ def visualize_json(data, output_path=None):
                                 (bestWorst.helpfulness.best - model.helpfulness) >= 30) completenessCell.className = 'worst';
                         row.appendChild(completenessCell);
 
-                        // Overall
-                        const overallCell = document.createElement('td');
-                        overallCell.textContent = formatPercent(model.overall);
-                        if (model.overall === bestWorst.overall.best) overallCell.className = 'best';
-                        else if (bestWorst.overall.best !== bestWorst.overall.worst &&
-                                model.overall === bestWorst.overall.worst &&
-                                (bestWorst.overall.best - model.overall) >= 30) overallCell.className = 'worst';
-                        row.appendChild(overallCell);
+                        // Quality
+                        const qualityCell = document.createElement('td');
+                        qualityCell.textContent = formatPercent(model.quality);
+                        if (model.quality === bestWorst.quality.best) qualityCell.className = 'best';
+                        else if (bestWorst.quality.best !== bestWorst.quality.worst &&
+                                model.quality === bestWorst.quality.worst &&
+                                (bestWorst.quality.best - model.quality) >= 30) qualityCell.className = 'worst';
+                        row.appendChild(qualityCell);
 
                         // Hallucination
                         const hallucinationCell = document.createElement('td');
