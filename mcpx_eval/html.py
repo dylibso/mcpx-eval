@@ -539,7 +539,7 @@ def visualize_json(data, output_path=None):
 
                         // Duration
                         const durationCell = document.createElement('td');
-                        durationCell.textContent = (model.duration || 0).toFixed(1);
+                        durationCell.textContent = (model.duration || 0).toFixed(3);
                         if (model.duration === bestWorst.duration.best) durationCell.className = 'best';
                         else if (bestWorst.duration.best !== bestWorst.duration.worst &&
                                 model.duration === bestWorst.duration.worst) durationCell.className = 'worst';
