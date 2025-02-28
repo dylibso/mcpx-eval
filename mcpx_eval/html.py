@@ -281,7 +281,7 @@ def visualize_json(data, output_path=None):
                     tool_use: findBestWorst(allValues.tool_use),
                     clarity: findBestWorst(allValues.clarity),
                     helpfulness: findBestWorst(allValues.helpfulness),
-                    overall: findBestWorst(allValues.overall),
+                    quality: findBestWorst(allValues.quality),
                     hallucination_score: findBestWorst(allValues.hallucination_score, false),
                     duration: findBestWorst(allValues.duration, false),
                     tool_calls: findBestWorst(allValues.tool_calls, false),
@@ -474,7 +474,7 @@ def visualize_json(data, output_path=None):
                     const headerRow = document.createElement('tr');
 
                     ['Rank', 'Model', 'Average Score', 'Accuracy', 'Tool Use', 'Clarity', 'Completeness', 'Quality',
-                     'Overall', 'Hallucination', 'Duration (s)', 'Tool Calls', 'Redundant Calls', 'Failed Calls'].forEach(header => {
+                     'Quality', 'Hallucination', 'Duration (s)', 'Tool Calls', 'Redundant Calls', 'Failed Calls'].forEach(header => {
                         const th = document.createElement('th');
                         th.textContent = header;
                         headerRow.appendChild(th);
