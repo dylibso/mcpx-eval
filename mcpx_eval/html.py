@@ -369,10 +369,10 @@ def visualize_json(data, output_path=None):
                     toolCallsCell.textContent = (model.tool_calls || 0).toFixed(1);
                     row.appendChild(toolCallsCell);
 
-                    // Runs Count
-                    const runsCell = document.createElement('td');
-                    runsCell.textContent = model.runs || model.test_count || 'N/A';
-                    row.appendChild(runsCell);
+                    // Failed Calls
+                    const failedCallsCell = document.createElement('td');
+                    failedCallsCell.textContent = (model.failed_tool_calls || 0).toFixed(1);
+                    row.appendChild(failedCallsCell);
 
                     tableBody.appendChild(row);
                 });
