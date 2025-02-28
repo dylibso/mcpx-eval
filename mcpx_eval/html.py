@@ -175,7 +175,7 @@ def visualize_json(data, output_path=None):
                                     <th>Hallucination</th>
                                     <th>Duration (s)</th>
                                     <th>Tool Calls</th>
-                                    <th>Tests</th>
+                                    <th>Failed Calls</th>
                                 </tr>
                             </thead>
                             <tbody id="overall-table-body">
