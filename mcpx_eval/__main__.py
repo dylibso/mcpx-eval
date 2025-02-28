@@ -26,7 +26,7 @@ def print_result(result):
                 "Accuracy %",
                 "Clarity %",
                 "Helpfulness %",
-                "Overall %",
+                "Quality %",
                 "Hallucination Score",
             ],
             "Value": [
@@ -37,8 +37,8 @@ def print_result(result):
                 f"{result.tool_use:.1f}",
                 f"{result.accuracy:.1f}",
                 f"{result.clarity:.1f}",
-                f"{result.helpfulness:.1f}",
-                f"{result.overall:.1f}",
+                f"{result.completeness:.1f}",
+                f"{result.quality:.1f}",
                 f"{result.hallucination_score:.1f}",
             ],
         }
@@ -175,6 +175,13 @@ async def run():
         "-m",
         default=[],
         help="Model to include in test",
+        action="append",
+    )
+    test_parser.add_argument(
+        "--tool",
+        "-t",
+        default=[],
+        help="Expected tool",
         action="append",
     )
     test_parser.add_argument(
@@ -324,6 +331,7 @@ async def run():
                 check=args.check or "",
                 models=args.model,
                 max_tool_calls=args.max_tool_calls,
+                expected_tools=args.expected_tools,
             )
 
         iterations = args.iter

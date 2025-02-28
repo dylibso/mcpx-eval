@@ -36,7 +36,7 @@ class Database:
                 failed_tool_calls INT NOT NULL DEFAULT 0,
                 clarity REAL NOT NULL DEFAULT 0.0,
                 helpfulness REAL NOT NULL DEFAULT 0.0,
-                overall REAL NOT NULL,
+                quality REAL NOT NULL,
                 hallucination_score REAL NOT NULL DEFAULT 0.0,
                 false_claims TEXT NOT NULL DEFAULT '[]',
                 tool_analysis TEXT NOT NULL DEFAULT '{}',
@@ -64,8 +64,8 @@ class Database:
                     "tool_calls": score.tool_calls,
                     "redundant_tool_calls": score.redundant_tool_calls,
                     "clarity": score.clarity,
-                    "helpfulness": score.helpfulness,
-                    "overall": score.overall,
+                    "helpfulness": score.completeness,
+                    "quality": score.quality,
                     "hallucination_score": score.hallucination_score,
                     "false_claims": json.dumps(score.false_claims),
                     "tool_analysis": json.dumps(score.tool_analysis),
@@ -103,8 +103,8 @@ class Database:
                 "tool_calls": score.tool_calls,
                 "redundant_tool_calls": score.redundant_tool_calls,
                 "clarity": score.clarity,
-                "helpfulness": score.helpfulness,
-                "overall": score.overall,
+                "helpfulness": score.completeness,
+                "quality": score.quality,
                 "hallucination_score": score.hallucination_score,
                 "false_claims": json.dumps(score.false_claims),
                 "tool_analysis": json.dumps(score.tool_analysis),
@@ -149,7 +149,7 @@ class Database:
                     "redundant_tool_calls": "mean",
                     "clarity": "mean",
                     "helpfulness": "mean",
-                    "overall": "mean",
+                    "quality": "mean",
                     "hallucination_score": "mean",
                     "false_claims": "sum",  # combine all false claims
                     "tool_analysis": "first",  # take first tool analysis
@@ -171,7 +171,7 @@ class Database:
                 redundant_tool_calls=int(row["redundant_tool_calls"]),
                 clarity=row["clarity"],
                 helpfulness=row["helpfulness"],
-                overall=row["overall"],
+                quality=row["quality"],
                 hallucination_score=row["hallucination_score"],
                 false_claims=row["false_claims"],
                 tool_analysis=row["tool_analysis"],
@@ -207,7 +207,7 @@ class Database:
                 AVG(redundant_tool_calls) as mean_redundant_calls,
                 AVG(clarity) as mean_clarity,
                 AVG(helpfulness) as mean_helpfulness,
-                AVG(overall) as mean_overall,
+                AVG(quality) as mean_quality,
                 AVG(hallucination_score) as mean_hallucination
             FROM eval_results
         """
@@ -236,7 +236,7 @@ class Database:
                 AVG(failed_tool_calls) as failed_tool_calls,
                 AVG(clarity) as clarity,
                 AVG(helpfulness) as helpfulness,
-                AVG(overall) as overall,
+                AVG(quality) as quality,
                 AVG(hallucination_score) as hallucination_score,
                 AVG(duration) as duration,
                 COUNT(*) as runs
@@ -255,7 +255,7 @@ class Database:
                         "tool_use": "{:.3f}%",
                         "clarity": "{:.3f}%",
                         "helpfulness": "{:.3f}%",
-                        "overall": "{:.3f}%",
+                        "quality": "{:.3f}%",
                         "hallucination_score": "{:.3f}%",
                         "tool_calls": "{:.1f}",
                         "redundant_tool_calls": "{:.1f}",
@@ -269,7 +269,7 @@ class Database:
                         "tool_use",
                         "clarity",
                         "helpfulness",
-                        "overall",
+                        "quality",
                     ],
                     cmap="RdYlGn",
                 )
@@ -298,7 +298,7 @@ class Database:
                 "redundant_tool_calls": lambda x: round(x.sum(), 1),
                 "clarity": lambda x: round(x.mean(), 3),
                 "helpfulness": lambda x: round(x.mean(), 3),
-                "overall": lambda x: round(x.mean(), 3),
+                "quality": lambda x: round(x.mean(), 3),
                 "hallucination_score": lambda x: round(x.mean(), 3),
             }
         )
@@ -307,7 +307,7 @@ class Database:
         # Process each test
         for test_name in df["test_name"].unique():
             test_df = df[df["test_name"] == test_name]
-            test_df = test_df.sort_values("overall", ascending=False)
+            test_df = test_df.sort_values("quality", ascending=False)
 
             # Calculate test metrics with formatted precision
             test_metrics = test_df.agg(
@@ -318,7 +318,7 @@ class Database:
                     "redundant_tool_calls": lambda x: round(x.sum(), 1),
                     "clarity": lambda x: round(x.mean(), 3),
                     "helpfulness": lambda x: round(x.mean(), 3),
-                    "overall": lambda x: round(x.mean(), 3),
+                    "quality": lambda x: round(x.mean(), 3),
                     "hallucination_score": lambda x: round(x.mean(), 3),
                 }
             )
@@ -341,10 +341,10 @@ class Database:
                         "failed_tool_calls": row["failed_tool_calls"],
                         "clarity": row["clarity"],
                         "helpfulness": row["helpfulness"],
-                        "overall": row["overall"],
+                        "quality": row["quality"],
                         "hallucination_score": row["hallucination_score"],
                         "runs": row["runs"],
-                        "duration": row["duration"]
+                        "duration": row["duration"],
                     }
                     for _, row in test_df.iterrows()
                 },
@@ -363,7 +363,7 @@ class Database:
                         "redundant_tool_calls": 0,
                         "clarity": 0.0,
                         "helpfulness": 0.0,
-                        "overall": 0.0,
+                        "quality": 0.0,
                         "hallucination_score": 0.0,
                         "test_count": 0,
                         "duration": 0.0,
@@ -375,7 +375,7 @@ class Database:
                     "tool_use",
                     "clarity",
                     "helpfulness",
-                    "overall",
+                    "quality",
                     "hallucination_score",
                     "duration",
                 ]:
@@ -396,7 +396,7 @@ class Database:
                     "tool_use",
                     "clarity",
                     "helpfulness",
-                    "overall",
+                    "quality",
                     "hallucination_score",
                     "duration",
                 ]:

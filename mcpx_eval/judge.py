@@ -45,13 +45,13 @@ class Judge:
 
     async def run_test(self, test: Test, save=True) -> Results:
         results = await self.run(
-            test.prompt, test.check, max_tool_calls=test.max_tool_calls
+            test.prompt, test.check, test.expected_tools, max_tool_calls=test.max_tool_calls
         )
         if save:
             self.db.save_results(test.name, results)
         return results
 
-    async def run(self, prompt, check, max_tool_calls: int | None = None) -> Results:
+    async def run(self, prompt, check, expected_tools, max_tool_calls: int | None = None) -> Results:
         m = []
         t = timedelta(seconds=0)
         model_cache = {}
@@ -79,10 +79,10 @@ class Judge:
                             f"Skipping invalid model provider: {model.provider}"
                         )
                     model_cache[model.name] = chat
-                start = datetime.now()
                 result = {"messages": []}
                 tool_calls = 0
                 chat.provider.config.client.clear_cache()
+                start = datetime.now()
                 async for response in chat.send_message(prompt):
                     tool = None
                     if response.tool is not None:
@@ -111,6 +111,8 @@ class Judge:
                             "tool": tool,
                         }
                     )
+            except KeyboardInterrupt:
+                continue
             except Exception as exc:
                 logger.error(f"Error message: {str(exc)}")
                 result["messages"].append(
@@ -161,14 +163,22 @@ class Judge:
 
             logger.info(f"Analyzing results of {model.name}")
             res = await self.agent.run(
-                user_prompt=f"""<direction>
-Analyze the following results for the prompt {prompt}.
+                user_prompt=f"""
+<direction>
+The maximum number of tools calls is: {max_tool_calls}
 
 For the hallucination_score metric (0-100 scale, lower is better), carefully check for any false statements,
 incorrect information, or made-up facts in the response and list them in the false_claims field.
 </direction>
+<prompt>
+{prompt}
+</prompt>
+<output>
+{data}
+</output>
 <check>{check}</check>
-{data}"""
+<expected-tools>{', '.join(expected_tools)}</expected-tools>
+"""
             )
 
             # Add additional metrics to the score

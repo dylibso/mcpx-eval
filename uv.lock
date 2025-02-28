@@ -715,7 +715,7 @@ dev = [
 requires-dist = [
     { name = "jinja2", specifier = ">=3.1.5" },
     { name = "matplotlib", specifier = ">=3.10.0" },
-    { name = "mcpx-py", git = "https://github.com/dylibso/mcpx-py" },
+    { name = "mcpx-py", specifier = ">=0.2.1" },
     { name = "mcpx-pydantic-ai", git = "https://github.com/dylibso/mcpx-pydantic-ai" },
     { name = "pandas", specifier = ">=2.2.0" },
 ]
@@ -730,7 +730,7 @@ dev = [
 [[package]]
 name = "mcpx-py"
 version = "0.2.4"
-source = { git = "https://github.com/dylibso/mcpx-py#7108dbf665dc4b6fa051a0fb0721d720ec4351d5" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anthropic" },
     { name = "mcp-run" },
@@ -738,6 +738,10 @@ dependencies = [
     { name = "openai" },
     { name = "psutil" },
     { name = "python-dotenv" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/02/21/6bd743f70ec25fa81cb9138ed7eb372b1376e1dcf824341d59fb119c3e7d/mcpx_py-0.2.4.tar.gz", hash = "sha256:13f08845bf900c95532e5d8cc3f0604395e085816b459af3bba7c4557fcc2bf5", size = 11475 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1a/86/d750340149c06a1d2b2b07508acaab7fa8b5d0582710e9e86ddd890a13f0/mcpx_py-0.2.4-py3-none-any.whl", hash = "sha256:55286413c6b5d5905f685bfae0eab065772c8f762a68be234ea3700b9891dffb", size = 10846 },
 ]
 
 [[package]]
