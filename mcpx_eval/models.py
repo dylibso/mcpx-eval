@@ -72,19 +72,19 @@ class Score(BaseModel):
     description: str = Field("Description of results for this model")
 
     # Core metrics
-    tool_use: float = Field("A score of how appropriate the tool use is")
+    tool_use: float = Field("A score (0-100) of how appropriate the tool use is")
     tool_calls: int = Field("Number of tool calls")
-    accuracy: float = Field("A score of how accurate the response is")
-    clarity: float = Field("A score of how clear and understandable the response is")
-    helpfulness: float = Field("A score of how helpful the response is to the user")
+    accuracy: float = Field("A score (0-100) of how accurate the response is")
+    clarity: float = Field("A score (0-100) of how clear and understandable the response is")
+    helpfulness: float = Field("A score (0-100) of how helpful the response is to the user")
     overall: float = Field(
-        "An overall score of the quality of the response, this may include things not included in the other scores"
+        "An overall score (0-100) of the quality of the response, this may include things not included in the other scores"
     )
 
     # Hallucination metrics
     hallucination_score: float = Field(
         0.0,
-        description="A score representing the presence of hallucinations (lower is better)",
+        description="A score (0-100) representing the presence of hallucinations (lower is better)",
     )
     false_claims: list = Field(
         [],
