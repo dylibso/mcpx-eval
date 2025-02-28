@@ -285,7 +285,15 @@ def visualize_json(data, output_path=None):
                     failed_tool_calls: findBestWorst(allValues.failed_tool_calls, false)
                 };
 
-                // Add rows to the table
+                // Generate and add rows
+                const rows = generateModelRows(models, bestWorst);
+                rows.forEach(row => tableBody.appendChild(row));
+            }
+
+            // Helper function to generate table rows for models
+            function generateModelRows(models, bestWorst) {
+                const rows = [];
+                
                 models.forEach((model, index) => {
                     const row = document.createElement('tr');
                     row.className = 'model-header';
@@ -375,13 +383,14 @@ def visualize_json(data, output_path=None):
                     // Failed Calls
                     const failedCallsCell = document.createElement('td');
                     failedCallsCell.textContent = (model.failed_tool_calls || 0).toFixed(1);
-                    const failedCalls = model.failed_tool_calls || 0;
-                    if (failedCalls === 0) failedCallsCell.className = 'best';
-                    else if (failedCalls === bestWorst.failed_tool_calls.worst && failedCalls > 0) failedCallsCell.className = 'worst';
+                    if (model.failed_tool_calls === bestWorst.failed_tool_calls.best && model.failed_tool_calls === 0) failedCallsCell.className = 'best';
+                    else if (model.failed_tool_calls === bestWorst.failed_tool_calls.worst && model.failed_tool_calls > 0) failedCallsCell.className = 'worst';
                     row.appendChild(failedCallsCell);
 
-                    tableBody.appendChild(row);
+                    rows.push(row);
                 });
+
+                return rows;
             }
 
             // Create tables for each individual test
