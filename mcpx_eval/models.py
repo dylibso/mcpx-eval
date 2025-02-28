@@ -79,14 +79,11 @@ class Score(BaseModel):
     accuracy: float = Field(
         "A score (0-100) of how accurate the response is based on the output of the tool calls"
     )
-    clarity: float = Field(
-        "A score (0-100) of how clear and understandable the response is, this includes making sure the formatting is correct"
-    )
     completeness: float = Field(
         "A score (0-100) of how complete the response is according to the check criteria"
     )
     quality: float = Field(
-        "A score (0-100) of the response quality, considering aspects beyond the other specific metrics"
+        "A score (0-100) of the response quality - this includes the usefullness and clarity of the output"
     )
 
     # Hallucination metrics
@@ -117,7 +114,6 @@ class Score(BaseModel):
             "tool_use": self.tool_use,
             "tool_calls": self.tool_calls,
             "accuracy": self.accuracy,
-            "clarity": self.clarity,
             "helpfulness": self.completeness,
             "quality": self.quality,
             "hallucination_score": self.hallucination_score,

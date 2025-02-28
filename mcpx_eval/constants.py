@@ -15,9 +15,8 @@ accuracy, tool use, user experience, and quality of the output.
 - The tool use score should be based on whether or not the correct tool was used and whether the minimum amount
   of tools were used to accomplish a task. Over use of tools or repeated use of tools should deduct points from
   this score.
-- The clarity score should measure how clear, concise, and understandable the model's response is
 - The helpfulness score should measure how useful the response is in addressing the user's need
-- The quality score should reflect the overall quality of the output, considering both performance and user experience
+- The quality score should reflect the overall quality and clearness of the output, considering both performance and user experience
 - Try to utilize the tools that are available instead of searching for new tools
 - Not using any tools should deduct some points from the tool use score
 
