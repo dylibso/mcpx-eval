@@ -246,7 +246,7 @@ def visualize_json(data, output_path=None):
                         data.tool_use,
                         data.clarity,
                         data.helpfulness,
-                        data.overall
+                        data.quality
                     ]);
 
                     return {
@@ -266,7 +266,7 @@ def visualize_json(data, output_path=None):
                     tool_use: models.map(m => m.tool_use),
                     clarity: models.map(m => m.clarity),
                     helpfulness: models.map(m => m.helpfulness),
-                    overall: models.map(m => m.overall),
+                    quality: models.map(m => m.quality),
                     hallucination_score: models.map(m => m.hallucination_score),
                     duration: models.map(m => m.duration || 0),
                     tool_calls: models.map(m => m.tool_calls || 0),
@@ -344,13 +344,13 @@ def visualize_json(data, output_path=None):
                             model.helpfulness === bestWorst.helpfulness.worst) completenessCell.className = 'worst';
                     row.appendChild(completenessCell);
 
-                    // Overall
-                    const overallCell = document.createElement('td');
-                    overallCell.textContent = formatPercent(model.overall);
-                    if (model.overall === bestWorst.overall.best) overallCell.className = 'best';
-                    else if (bestWorst.overall.best !== bestWorst.overall.worst &&
-                            model.overall === bestWorst.overall.worst) overallCell.className = 'worst';
-                    row.appendChild(overallCell);
+                    // Quality
+                    const qualityCell = document.createElement('td');
+                    qualityCell.textContent = formatPercent(model.quality);
+                    if (model.quality === bestWorst.quality.best) qualityCell.className = 'best';
+                    else if (bestWorst.quality.best !== bestWorst.quality.worst &&
+                            model.quality === bestWorst.quality.worst) qualityCell.className = 'worst';
+                    row.appendChild(qualityCell);
 
                     // Hallucination
                     const hallucinationCell = document.createElement('td');
@@ -458,7 +458,7 @@ def visualize_json(data, output_path=None):
                         tool_use: findBestWorst(allValues.tool_use),
                         clarity: findBestWorst(allValues.clarity),
                         helpfulness: findBestWorst(allValues.helpfulness),
-                        overall: findBestWorst(allValues.overall),
+                        quality: findBestWorst(allValues.quality),
                         hallucination_score: findBestWorst(allValues.hallucination_score, false),
                         duration: findBestWorst(allValues.duration, false),
                         tool_calls: findBestWorst(allValues.tool_calls, false),

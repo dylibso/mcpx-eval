@@ -86,7 +86,7 @@ class Score(BaseModel):
         "A score (0-100) of how complete the response is according to the check criteria"
     )
     quality: float = Field(
-        "A score (0-100) of the overall quality of the response, this may include things not included in the other scores"
+        "A score (0-100) of the response quality, considering aspects beyond the other specific metrics"
     )
 
     # Hallucination metrics
