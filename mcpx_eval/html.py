@@ -360,24 +360,30 @@ def visualize_json(data, output_path=None):
                     if (model.duration === bestWorst.duration.best) durationCell.className = 'best';
                     else if (bestWorst.duration.best !== bestWorst.duration.worst &&
                             model.duration === bestWorst.duration.worst) durationCell.className = 'worst';
-                    if (model.duration === bestWorst.duration.best) durationCell.className = 'best';
-                    else if (bestWorst.duration.best !== bestWorst.duration.worst &&
-                            model.duration === bestWorst.duration.worst) durationCell.className = 'worst';
                     row.appendChild(durationCell);
 
                     // Tool Calls
                     const toolCallsCell = document.createElement('td');
                     toolCallsCell.textContent = (model.tool_calls || 0).toFixed(1);
+                    if (model.tool_calls === bestWorst.tool_calls.best) toolCallsCell.className = 'best';
+                    else if (bestWorst.tool_calls.best !== bestWorst.tool_calls.worst &&
+                            model.tool_calls === bestWorst.tool_calls.worst) toolCallsCell.className = 'worst';
                     row.appendChild(toolCallsCell);
 
                     // Redundant Calls
                     const redundantCallsCell = document.createElement('td');
                     redundantCallsCell.textContent = (model.redundant_tool_calls || 0).toFixed(1);
+                    if (model.redundant_tool_calls === bestWorst.redundant_tool_calls.best) redundantCallsCell.className = 'best';
+                    else if (bestWorst.redundant_tool_calls.best !== bestWorst.redundant_tool_calls.worst &&
+                            model.redundant_tool_calls === bestWorst.redundant_tool_calls.worst) redundantCallsCell.className = 'worst';
                     row.appendChild(redundantCallsCell);
 
                     // Failed Calls
                     const failedCallsCell = document.createElement('td');
                     failedCallsCell.textContent = (model.failed_tool_calls || 0).toFixed(1);
+                    if (model.failed_tool_calls === bestWorst.failed_tool_calls.best) failedCallsCell.className = 'best';
+                    else if (bestWorst.failed_tool_calls.best !== bestWorst.failed_tool_calls.worst &&
+                            model.failed_tool_calls === bestWorst.failed_tool_calls.worst) failedCallsCell.className = 'worst';
                     row.appendChild(failedCallsCell);
 
                     tableBody.appendChild(row);
