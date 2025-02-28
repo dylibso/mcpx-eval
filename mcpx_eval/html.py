@@ -427,7 +427,7 @@ def visualize_json(data, output_path=None):
                         helpfulness: models.map(m => m.helpfulness),
                         overall: models.map(m => m.overall),
                         hallucination_score: models.map(m => m.hallucination_score),
-                        duration: models.map(m => m.duration)
+                        duration: models.map(m => m.duration || 0)
                     };
 
                     // Find best/worst values
