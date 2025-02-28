@@ -17,7 +17,9 @@ def visualize_json(data, output_path=None):
         tool_scores = [models[m]["tool_use"] for m in model_names]
 
         # Sort by overall score
-        sorted_indices = sorted(range(len(tool_scores)), key=lambda k: tool_scores[k], reverse=True)
+        sorted_indices = sorted(
+            range(len(tool_scores)), key=lambda k: tool_scores[k], reverse=True
+        )
         model_names = [model_names[i] for i in sorted_indices]
         accuracies = [accuracies[i] for i in sorted_indices]
         tool_scores = [tool_scores[i] for i in sorted_indices]
@@ -26,22 +28,34 @@ def visualize_json(data, output_path=None):
         x = range(len(model_names))
         width = 0.35
 
-        plt.bar([i - width/2 for i in x], accuracies, width, label='Accuracy', color='skyblue')
-        plt.bar([i + width/2 for i in x], tool_scores, width, label='Tool Use', color='lightgreen')
+        plt.bar(
+            [i - width / 2 for i in x],
+            accuracies,
+            width,
+            label="Accuracy",
+            color="skyblue",
+        )
+        plt.bar(
+            [i + width / 2 for i in x],
+            tool_scores,
+            width,
+            label="Tool Use",
+            color="lightgreen",
+        )
 
-        plt.xlabel('Models')
-        plt.ylabel('Score (%)')
-        plt.xticks(x, model_names, rotation=45, ha='right')
+        plt.xlabel("Models")
+        plt.ylabel("Score (%)")
+        plt.xticks(x, model_names, rotation=45, ha="right")
         plt.legend()
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
 
         # Convert plot to base64 string
         buf = io.BytesIO()
-        plt.savefig(buf, format='png', dpi=300, bbox_inches='tight')
+        plt.savefig(buf, format="png", dpi=300, bbox_inches="tight")
         plt.close()
         buf.seek(0)
-        return base64.b64encode(buf.getvalue()).decode('utf-8')
+        return base64.b64encode(buf.getvalue()).decode("utf-8")
 
     # Create HTML content with comparison tables and JSON viewer
     html = (
@@ -243,7 +257,7 @@ def visualize_json(data, output_path=None):
                     const avgScore = calculateAverage([
                         data.accuracy,
                         data.tool_use,
-                        data.helpfulness,
+                        data.completeness,
                         data.quality
                     ]);
 
@@ -437,7 +451,7 @@ def visualize_json(data, output_path=None):
                         avgScore: models.map(m => m.avgScore),
                         accuracy: models.map(m => m.accuracy),
                         tool_use: models.map(m => m.tool_use),
-                        helpfulness: models.map(m => m.helpfulness),
+                        completeness: models.map(m => m.completeness),
                         quality: models.map(m => m.quality),
                         hallucination_score: models.map(m => m.hallucination_score),
                         duration: models.map(m => m.duration || 0),
@@ -451,7 +465,7 @@ def visualize_json(data, output_path=None):
                         avgScore: findBestWorst(allValues.avgScore),
                         accuracy: findBestWorst(allValues.accuracy),
                         tool_use: findBestWorst(allValues.tool_use),
-                        helpfulness: findBestWorst(allValues.helpfulness),
+                        completeness: findBestWorst(allValues.completeness),
                         quality: findBestWorst(allValues.quality),
                         hallucination_score: findBestWorst(allValues.hallucination_score, false),
                         duration: findBestWorst(allValues.duration, false),

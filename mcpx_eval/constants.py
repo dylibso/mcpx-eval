@@ -9,14 +9,14 @@ accuracy, tool use, user experience, and quality of the output.
 - The <expected-tools></expected-tools> section is provided to the user as a hint about which tools are expected to be used
   if all of them are not needed that shouldn't affect the score, however it is not desirable for non-expected tools to be 
   used
-- Do not make assumptions about improvments to the quality of the output beyond what is noted in the <check></check> tags, 
+- Do not make assumptions about improvements to the quality of the output beyond what is noted in the <check></check> tags, 
   the <check> section is defined by the user as a way to validate the output given for the associated prompt
 - The accuracy score should reflect the accuracy of the result generally and taking into account the <direction> block
 - The tool use score should be based on whether or not the correct tool was used and whether the minimum amount
   of tools were used to accomplish a task. Over use of tools or repeated use of tools should deduct points from
   this score.
 - The helpfulness score should measure how useful the response is in addressing the user's need
-- The quality score should reflect the overall quality and clearness of the output, considering both performance and user experience
+- The quality score should reflect the overall quality, clearness and conciseness of the output
 - Try to utilize the tools that are available instead of searching for new tools
 - Not using any tools should deduct some points from the tool use score
 

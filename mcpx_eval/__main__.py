@@ -5,6 +5,7 @@ import logging
 import pandas as pd
 from tempfile import NamedTemporaryFile
 import webbrowser
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -91,11 +92,11 @@ def summary(args):
     res = db.average_results(args.name)
     if not res.scores:
         return  # Database class now handles empty results messaging
-    
+
     print(f"\nTest Summary: {args.name}")
     print("=" * (14 + len(args.name)))
     print(f"Number of results: {len(res.scores)}\n")
-    
+
     for result in res.scores:
         print_result(result)
 
@@ -135,14 +136,14 @@ def json_summary(args):
     formatted_json = json.dumps(summary, indent=2)
 
     # Output to file or stdout
-    if args.output:
+    if args.json:
         with open(args.output, "w") as f:
             f.write(formatted_json)
         print(f"JSON summary saved to {args.output}")
         print(
             f"To visualize this file, run: uv run python -m mcpx_eval html {args.output}"
         )
-    else:
+    elif not args.html and not args.show:
         print(formatted_json)
 
     # If visualization is requested, create and open it
@@ -152,9 +153,8 @@ def json_summary(args):
     if output_path:
         with open(output_path, "w") as f:
             f.write(html)
-        print(f"JSON visualization saved to {output_path}")
-        print("To view this visualization again later, open the file in your browser.")
-        temp_path = output_path
+        print(f"Saved to {output_path}")
+        temp_path = os.path.abspath(output_path)
     if args.show:
         if output_path is None:
             # Write to temporary file and open in browser
@@ -169,7 +169,9 @@ def json_summary(args):
 async def run():
     from argparse import ArgumentParser
 
-    parser = ArgumentParser("mcpx-eval", description="LLM tool use evaluator")
+    parser = ArgumentParser(
+        "mcpx-eval", description="Open-ended LLM tool use evaluator"
+    )
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
 
     # Main test command (default)
@@ -224,8 +226,7 @@ async def run():
         help="Filter results to a specific test name",
     )
     gen_parser.add_argument(
-        "--output",
-        "-o",
+        "--json",
         help="Output JSON file path (default: print to stdout)",
     )
     gen_parser.add_argument(
@@ -279,7 +280,7 @@ async def run():
         return
 
     # Test command (default)
-    else:
+    elif command == "test":
         test = None
         if hasattr(args, "config") and args.config is not None:
             test = Test.load(args.config)
@@ -346,23 +347,12 @@ async def run():
             if result is None:
                 continue
             print_result(result)
+    else:
+        parser.print_help()
 
 
 def main():
     asyncio.run(run())
-
-    # Print helpful usage examples at the end
-    print("\nUsage examples:")
-    print("  Generate JSON summary:                uv run python -m mcpx_eval gen")
-    print(
-        "  Open HTML scoreboard in browser:        uv run python -m mcpx_eval gen --show"
-    )
-    print(
-        "  Save JSON to file:                      uv run python -m mcpx_eval gen --json results.json"
-    )
-    print(
-        "  Generate HTML scoreboard:               uv run python -m mcpx_eval gen --html out.html"
-    )
 
 
 if __name__ == "__main__":

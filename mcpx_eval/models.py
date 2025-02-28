@@ -80,7 +80,7 @@ class Score(BaseModel):
         "A score (0-100) of how accurate the response is based on the output of the tool calls"
     )
     completeness: float = Field(
-        "A score (0-100) of how complete the response is according to the check criteria"
+        "A score (0-100) of how complete the response is according to the task at hand and <check> criteria"
     )
     quality: float = Field(
         "A score (0-100) of the response quality - this includes the usefullness and clarity of the output"

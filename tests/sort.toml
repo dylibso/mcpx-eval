@@ -1,0 +1,5 @@
+import = "template/eval.toml"
+name = "sort"
+prompt = "Sort the list [5, 3, 4, 1, 2] in ascending order."
+check = "[1, 2, 3, 4, 5]"
+max-tool-calls = 5
