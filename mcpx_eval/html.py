@@ -280,7 +280,10 @@ def visualize_json(data, output_path=None):
                     helpfulness: findBestWorst(allValues.helpfulness),
                     overall: findBestWorst(allValues.overall),
                     hallucination_score: findBestWorst(allValues.hallucination_score, false),
-                    duration: findBestWorst(allValues.duration, false)
+                    duration: findBestWorst(allValues.duration, false),
+                    tool_calls: findBestWorst(allValues.tool_calls, false),
+                    redundant_tool_calls: findBestWorst(allValues.redundant_tool_calls, false),
+                    failed_tool_calls: findBestWorst(allValues.failed_tool_calls, false)
                 };
 
                 // Add rows to the table
