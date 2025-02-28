@@ -341,6 +341,7 @@ class Database:
                         "overall": row["overall"],
                         "hallucination_score": row["hallucination_score"],
                         "runs": row["runs"],
+                        "duration": row["duration"]
                     }
                     for _, row in test_df.iterrows()
                 },
