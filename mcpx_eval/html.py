@@ -473,7 +473,7 @@ def visualize_json(data, output_path=None):
                     const thead = document.createElement('thead');
                     const headerRow = document.createElement('tr');
 
-                    ['Rank', 'Model', 'Average Score', 'Accuracy', 'Tool Use', 'Clarity', 'Completeness',
+                    ['Rank', 'Model', 'Average Score', 'Accuracy', 'Tool Use', 'Clarity', 'Completeness', 'Quality',
                      'Overall', 'Hallucination', 'Duration (s)', 'Tool Calls', 'Redundant Calls', 'Failed Calls'].forEach(header => {
                         const th = document.createElement('th');
                         th.textContent = header;
