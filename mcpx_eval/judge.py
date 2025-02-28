@@ -33,11 +33,12 @@ class Judge:
 
     def add_model(self, model: Model | str, profile: str | None = None):
         if isinstance(model, str):
-            model = Model(name=model, config=ChatConfig(model=model))
+            model = Model(
+                name=model, config=ChatConfig(model=model, system=TEST_PROMPT)
+            )
         model.config.model = model.name
         if model.config.client is None:
             model.config.client = self.agent.client
-        model.config.system = TEST_PROMPT
         if profile is not None:
             model.config.client.set_profile(profile)
         self.models.append(model)
@@ -56,32 +57,37 @@ class Judge:
         model_cache = {}
         for model in self.models:
             logger.info(f"Evaluating model {model.name}")
-            if model.name in model_cache:
-                chat = model_cache[model.name]
-            else:
-                if model.provider == "anthropic":
-                    chat = Chat(Claude(config=model.config))
-                elif model.provider == "openai":
-                    chat = Chat(OpenAI(config=model.config))
-                elif model.provider == "google":
-                    chat = Chat(Gemini(config=model.config))
-                elif model.provider == "ollama":
-                    model.config.system = """
-                    You are a helpful large language model with tool calling access. Use the available tools
-                    to determine results you cannot answer on your own
-                    """
-                    chat = Chat(Ollama(config=model.config))
-                else:
-                    logger.error(f"Skipping invalid model provider: {model.provider}")
-                model_cache[model.name] = chat
-            start = datetime.now()
-            result = {"model": model.slug, "messages": []}
-            tool_calls = 0
             try:
+                if model.name in model_cache:
+                    chat = model_cache[model.slug]
+                    chat.provider.clear_history()
+                else:
+                    if model.provider == "anthropic":
+                        chat = Chat(Claude(config=model.config))
+                    elif model.provider == "openai":
+                        chat = Chat(OpenAI(config=model.config))
+                    elif model.provider == "google":
+                        chat = Chat(Gemini(config=model.config))
+                    elif model.provider == "ollama":
+                        model.config.system = """
+                        You are a helpful large language model with tool calling access. Use the available tools
+                        to determine results you cannot answer on your own
+                        """
+                        chat = Chat(Ollama(config=model.config))
+                    else:
+                        logger.error(
+                            f"Skipping invalid model provider: {model.provider}"
+                        )
+                    model_cache[model.name] = chat
+                start = datetime.now()
+                result = {"messages": []}
+                tool_calls = 0
+                chat.provider.config.client.clear_cache()
                 async for response in chat.send_message(prompt):
                     tool = None
                     if response.tool is not None:
                         logger.info(f"Tool: {response.tool.name} {response.tool.input}")
+                        logger.debug(f"Result: {response.content}")
                         tool = {
                             "name": response.tool.name,
                             "input": response.tool.input,
@@ -158,7 +164,7 @@ class Judge:
                 user_prompt=f"""<direction>
 Analyze the following results for the prompt {prompt}.
 
-For the hallucination_score metric (0-100 scale, lower is better), carefully check for any false statements, 
+For the hallucination_score metric (0-100 scale, lower is better), carefully check for any false statements,
 incorrect information, or made-up facts in the response and list them in the false_claims field.
 </direction>
 <check>{check}</check>
@@ -172,6 +178,7 @@ incorrect information, or made-up facts in the response and list them in the fal
             score_data.tool_analysis = tool_analysis
             score_data.redundant_tool_calls = redundant_tool_calls
             score_data.duration = duration_seconds
+            score_data.model = model.slug
 
             m.append(score_data)
         return Results(scores=m, duration=t.total_seconds())

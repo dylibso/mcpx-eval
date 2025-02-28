@@ -1,4 +1,5 @@
 name = "google-homepage-images"
 
-prompt = "how many images are on the google homepage?"
+prompt = "fetch the google homepage and count the number of images"
+#how many images are on the homepage of google?"
 check = "the fetch tool should be used to determine the number of images on the homepage of google.com"

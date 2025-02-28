@@ -16,13 +16,15 @@ def parse_model(m: str) -> (str, str, str):
         if '/' not in profile:
             profile = "~/" + profile
     else:
-        profile = "default"
+        profile = "~/default"
     if "claude" in name:
         provider = "anthropic"
     elif (
         name in ["gpt-4o", "o1", "o1-mini", "o3-mini", "o3"]
         or "gpt-3.5" in name
         or "gpt-4" in name
+        or "gpt-4.5" in name
+
     ):
         provider = "openai"
 
@@ -99,6 +101,24 @@ class Score(BaseModel):
     )
 
 
+    def to_dataframe(self) -> pd.DataFrame:
+        """Convert results to a pandas DataFrame for analysis"""
+        record = {
+            "model": score.model,
+            "duration": score.duration,
+            "tool_use": score.tool_use,
+            "tool_calls": score.tool_calls,
+            "accuracy": score.accuracy,
+            "clarity": score.clarity,
+            "helpfulness": score.helpfulness,
+            "overall": score.overall,
+            "hallucination_score": score.hallucination_score,
+            "redundant_tool_calls": score.redundant_tool_calls,
+            "false_claims_count": len(score.false_claims),
+        }
+        return pd.DataFrame(record)
+
+
 class Results(BaseModel):
     scores: List[Score] = Field("A list of scores for each model")
     duration: float = Field("Total duration of all tests")
@@ -107,21 +127,8 @@ class Results(BaseModel):
         """Convert results to a pandas DataFrame for analysis"""
         records = []
         for score in self.scores:
-            record = {
-                "model": score.model,
-                "duration": score.duration,
-                "tool_use": score.tool_use,
-                "tool_calls": score.tool_calls,
-                "accuracy": score.accuracy,
-                "clarity": score.clarity,
-                "helpfulness": score.helpfulness,
-                "overall": score.overall,
-                "hallucination_score": score.hallucination_score,
-                "redundant_tool_calls": score.redundant_tool_calls,
-                "false_claims_count": len(score.false_claims),
-            }
-            records.append(record)
-        return pd.DataFrame(records)
+            records.append(score.to_dataframe())
+        return pd.concat(records)
 
 
 class Test:

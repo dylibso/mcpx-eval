@@ -34,7 +34,7 @@ class Database:
                 tool_calls INT NOT NULL,
                 redundant_tool_calls INT NOT NULL DEFAULT 0,
                 clarity REAL NOT NULL DEFAULT 0.0,
-                helpfulness REAL NOT NULL DEFAULT 0.0, 
+                helpfulness REAL NOT NULL DEFAULT 0.0,
                 overall REAL NOT NULL,
                 hallucination_score REAL NOT NULL DEFAULT 0.0,
                 false_claims TEXT NOT NULL DEFAULT '[]',
@@ -193,7 +193,7 @@ class Database:
             - Min/max durations
         """
         query = """
-            SELECT 
+            SELECT
                 test_name,
                 model,
                 COUNT(*) as runs,
@@ -225,7 +225,7 @@ class Database:
         # Read results into a pandas DataFrame
         df = pd.read_sql_query(
             """
-            SELECT 
+            SELECT
                 test_name,
                 model,
                 AVG(accuracy) as accuracy,

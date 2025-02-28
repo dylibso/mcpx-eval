@@ -2,10 +2,7 @@ from . import Judge, Test, Database
 from .html import visualize_json
 import asyncio
 import logging
-import json
-import os
 import pandas as pd
-from datetime import datetime
 from tempfile import NamedTemporaryFile
 import webbrowser
 
@@ -16,49 +13,51 @@ def print_result(result):
     # Print model header
     print(f"\n{result.model}")
     print("=" * len(result.model))
-    
+
     # Create a DataFrame for the metrics
-    metrics_df = pd.DataFrame({
-        'Metric': [
-            'Duration (s)', 
-            'Tool Calls',
-            'Redundant Calls',
-            'Tool Use %',
-            'Accuracy %',
-            'Clarity %',
-            'Helpfulness %',
-            'Overall %',
-            'Hallucination Score'
-        ],
-        'Value': [
-            f"{result.duration:.2f}",
-            result.tool_calls,
-            result.redundant_tool_calls,
-            f"{result.tool_use:.1f}",
-            f"{result.accuracy:.1f}",
-            f"{result.clarity:.1f}",
-            f"{result.helpfulness:.1f}",
-            f"{result.overall:.1f}",
-            f"{result.hallucination_score:.1f}"
-        ]
-    })
-    
+    metrics_df = pd.DataFrame(
+        {
+            "Metric": [
+                "Duration (s)",
+                "Tool Calls",
+                "Redundant Calls",
+                "Tool Use %",
+                "Accuracy %",
+                "Clarity %",
+                "Helpfulness %",
+                "Overall %",
+                "Hallucination Score",
+            ],
+            "Value": [
+                f"{result.duration:.2f}",
+                result.tool_calls,
+                result.redundant_tool_calls,
+                f"{result.tool_use:.1f}",
+                f"{result.accuracy:.1f}",
+                f"{result.clarity:.1f}",
+                f"{result.helpfulness:.1f}",
+                f"{result.overall:.1f}",
+                f"{result.hallucination_score:.1f}",
+            ],
+        }
+    )
+
     # Print metrics table
     print("\nMetrics:")
     print(metrics_df.to_string(index=False))
-    
+
     # Print output and description
     print("\nOutput:")
     print(result.llm_output)
     print("\nDescription:")
     print(result.description)
-    
+
     # Print false claims if any
     if result.false_claims and len(result.false_claims) > 0:
         print("\nFalse Claims Detected:")
         for claim in result.false_claims:
             print(f"  - {claim}")
-    
+
     # Print tool analysis if any
     if result.tool_analysis and len(result.tool_analysis) > 0:
         print("\nTool Analysis:")
@@ -66,18 +65,22 @@ def print_result(result):
         for tool_id, analysis in result.tool_analysis.items():
             if isinstance(analysis, list):
                 for a in analysis:
-                    tool_data.append({
-                        'Tool ID': tool_id,
-                        'Name': a['name'],
-                        'Redundancy': a['redundancy']
-                    })
+                    tool_data.append(
+                        {
+                            "Tool ID": tool_id,
+                            "Name": a["name"],
+                            "Redundancy": a["redundancy"],
+                        }
+                    )
             else:
-                tool_data.append({
-                    'Tool ID': tool_id,
-                    'Name': analysis['name'],
-                    'Redundancy': analysis['redundancy']
-                })
-        
+                tool_data.append(
+                    {
+                        "Tool ID": tool_id,
+                        "Name": analysis["name"],
+                        "Redundancy": analysis["redundancy"],
+                    }
+                )
+
         if tool_data:
             tool_df = pd.DataFrame(tool_data)
             print(tool_df.to_string(index=False))
@@ -143,7 +146,7 @@ def json_summary(args):
         with open(output_path, "w") as f:
             f.write(html)
         print(f"JSON visualization saved to {output_path}")
-        print(f"To view this visualization again later, open the file in your browser.")
+        print("To view this visualization again later, open the file in your browser.")
         temp_path = output_path
     if args.show:
         if output_path is None:
@@ -152,7 +155,7 @@ def json_summary(args):
                 f.write(html)
                 temp_path = f.name
 
-        print(f"Opening browser...")
+        print("Opening browser...")
         webbrowser.open(f"file://{temp_path}")
 
 
@@ -327,6 +330,10 @@ async def run():
         )
         judge = Judge(models=test.models)
         judge.db.save_test(test)
+
+        tools = list(judge.agent.client.tools.keys())
+
+        logger.info(f"Found tools: {', '.join(tools)}")
 
         all_results = []
         total_duration = 0
