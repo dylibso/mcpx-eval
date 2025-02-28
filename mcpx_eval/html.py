@@ -170,7 +170,7 @@ def visualize_json(data, output_path=None):
                                     <th>Accuracy</th>
                                     <th>Tool Use</th>
                                     <th>Clarity</th>
-                                    <th>Helpfulness</th>
+                                    <th>Completeness</th>
                                     <th>Overall</th>
                                     <th>Hallucination</th>
                                     <th>Duration (s)</th>
@@ -336,13 +336,13 @@ def visualize_json(data, output_path=None):
                             model.clarity === bestWorst.clarity.worst) clarityCell.className = 'worst';
                     row.appendChild(clarityCell);
 
-                    // Helpfulness
-                    const helpfulnessCell = document.createElement('td');
-                    helpfulnessCell.textContent = formatPercent(model.helpfulness);
-                    if (model.helpfulness === bestWorst.helpfulness.best) helpfulnessCell.className = 'best';
+                    // Completeness
+                    const completenessCell = document.createElement('td');
+                    completenessCell.textContent = formatPercent(model.helpfulness);
+                    if (model.helpfulness === bestWorst.helpfulness.best) completenessCell.className = 'best';
                     else if (bestWorst.helpfulness.best !== bestWorst.helpfulness.worst &&
-                            model.helpfulness === bestWorst.helpfulness.worst) helpfulnessCell.className = 'worst';
-                    row.appendChild(helpfulnessCell);
+                            model.helpfulness === bestWorst.helpfulness.worst) completenessCell.className = 'worst';
+                    row.appendChild(completenessCell);
 
                     // Overall
                     const overallCell = document.createElement('td');
@@ -473,7 +473,7 @@ def visualize_json(data, output_path=None):
                     const thead = document.createElement('thead');
                     const headerRow = document.createElement('tr');
 
-                    ['Rank', 'Model', 'Average Score', 'Accuracy', 'Tool Use', 'Clarity', 'Helpfulness',
+                    ['Rank', 'Model', 'Average Score', 'Accuracy', 'Tool Use', 'Clarity', 'Completeness',
                      'Overall', 'Hallucination', 'Duration (s)', 'Tool Calls', 'Redundant Calls', 'Failed Calls'].forEach(header => {
                         const th = document.createElement('th');
                         th.textContent = header;
@@ -537,14 +537,14 @@ def visualize_json(data, output_path=None):
                                 (bestWorst.clarity.best - model.clarity) >= 30) clarityCell.className = 'worst';
                         row.appendChild(clarityCell);
 
-                        // Helpfulness
-                        const helpfulnessCell = document.createElement('td');
-                        helpfulnessCell.textContent = formatPercent(model.helpfulness);
-                        if (model.helpfulness === bestWorst.helpfulness.best) helpfulnessCell.className = 'best';
+                        // Completeness
+                        const completenessCell = document.createElement('td');
+                        completenessCell.textContent = formatPercent(model.helpfulness);
+                        if (model.helpfulness === bestWorst.helpfulness.best) completenessCell.className = 'best';
                         else if (bestWorst.helpfulness.best !== bestWorst.helpfulness.worst &&
                                 model.helpfulness === bestWorst.helpfulness.worst &&
-                                (bestWorst.helpfulness.best - model.helpfulness) >= 30) helpfulnessCell.className = 'worst';
-                        row.appendChild(helpfulnessCell);
+                                (bestWorst.helpfulness.best - model.helpfulness) >= 30) completenessCell.className = 'worst';
+                        row.appendChild(completenessCell);
 
                         // Overall
                         const overallCell = document.createElement('td');
