@@ -236,7 +236,7 @@ class Database:
                 AVG(helpfulness) as helpfulness,
                 AVG(overall) as overall,
                 AVG(hallucination_score) as hallucination_score,
-                SUM(duration) as duration,
+                AVG(duration) as duration,
                 COUNT(*) as runs
             FROM eval_results
             GROUP BY test_name, model
