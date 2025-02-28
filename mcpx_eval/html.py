@@ -262,7 +262,7 @@ def visualize_json(data, output_path=None):
                     avgScore: models.map(m => m.avgScore),
                     accuracy: models.map(m => m.accuracy),
                     tool_use: models.map(m => m.tool_use),
-                    helpfulness: models.map(m => m.helpfulness),
+                    completeness: models.map(m => m.completeness),
                     quality: models.map(m => m.quality),
                     hallucination_score: models.map(m => m.hallucination_score),
                     duration: models.map(m => m.duration || 0),
@@ -276,7 +276,7 @@ def visualize_json(data, output_path=None):
                     avgScore: findBestWorst(allValues.avgScore),
                     accuracy: findBestWorst(allValues.accuracy),
                     tool_use: findBestWorst(allValues.tool_use),
-                    helpfulness: findBestWorst(allValues.helpfulness),
+                    completeness: findBestWorst(allValues.completeness),
                     quality: findBestWorst(allValues.quality),
                     hallucination_score: findBestWorst(allValues.hallucination_score, false),
                     duration: findBestWorst(allValues.duration, false),
@@ -334,10 +334,10 @@ def visualize_json(data, output_path=None):
 
                     // Completeness
                     const completenessCell = document.createElement('td');
-                    completenessCell.textContent = formatPercent(model.helpfulness);
-                    if (model.helpfulness === bestWorst.helpfulness.best) completenessCell.className = 'best';
-                    else if (bestWorst.helpfulness.best !== bestWorst.helpfulness.worst &&
-                            model.helpfulness === bestWorst.helpfulness.worst) completenessCell.className = 'worst';
+                    completenessCell.textContent = formatPercent(model.completeness);
+                    if (model.completeness === bestWorst.completeness.best) completenessCell.className = 'best';
+                    else if (bestWorst.completeness.best !== bestWorst.completeness.worst &&
+                            model.completeness === bestWorst.completeness.worst) completenessCell.className = 'worst';
                     row.appendChild(completenessCell);
 
                     // Quality
@@ -418,7 +418,7 @@ def visualize_json(data, output_path=None):
                         const avgScore = calculateAverage([
                             data.accuracy,
                             data.tool_use,
-                            data.helpfulness,
+                            data.completeness,
                             data.quality
                         ]);
 
