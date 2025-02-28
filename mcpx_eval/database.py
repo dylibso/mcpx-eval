@@ -338,6 +338,7 @@ class Database:
                         "tool_use": row["tool_use"],
                         "tool_calls": row["tool_calls"],
                         "redundant_tool_calls": row["redundant_tool_calls"],
+                        "failed_tool_calls": row["failed_tool_calls"],
                         "clarity": row["clarity"],
                         "helpfulness": row["helpfulness"],
                         "overall": row["overall"],
