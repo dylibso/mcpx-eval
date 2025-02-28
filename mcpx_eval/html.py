@@ -268,7 +268,10 @@ def visualize_json(data, output_path=None):
                     helpfulness: models.map(m => m.helpfulness),
                     overall: models.map(m => m.overall),
                     hallucination_score: models.map(m => m.hallucination_score),
-                    duration: models.map(m => m.avgScore.duration)
+                    duration: models.map(m => m.duration || 0),
+                    tool_calls: models.map(m => m.tool_calls || 0),
+                    redundant_tool_calls: models.map(m => m.redundant_tool_calls || 0),
+                    failed_tool_calls: models.map(m => m.failed_tool_calls || 0)
                 };
 
                 // Find best/worst values
