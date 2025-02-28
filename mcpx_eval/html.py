@@ -30,13 +30,14 @@ def visualize_json(data, output_path=None):
 
         plt.figure(figsize=(15, 8))
         x = range(len(model_names))
-        width = 0.2  # Wider bars now that we have one less metric
+        width = 0.15  # Narrower bars to fit all metrics
 
         # Plot each metric with offset positions
-        plt.bar([i - width*1.5 for i in x], metrics["accuracy"], width, label="Accuracy (blue)", color="skyblue")
-        plt.bar([i - width*0.5 for i in x], metrics["tool_use"], width, label="Tool Use (green)", color="lightgreen")
-        plt.bar([i + width*0.5 for i in x], metrics["completeness"], width, label="Completeness (orange)", color="orange")
-        plt.bar([i + width*1.5 for i in x], metrics["quality"], width, label="Quality (purple)", color="purple")
+        plt.bar([i - width*2 for i in x], metrics["accuracy"], width, label="Accuracy", color="skyblue")
+        plt.bar([i - width for i in x], metrics["tool_use"], width, label="Tool Use", color="lightgreen")
+        plt.bar([i for i in x], metrics["completeness"], width, label="Completeness", color="orange")
+        plt.bar([i + width for i in x], metrics["quality"], width, label="Quality", color="purple")
+        plt.bar([i + width*2 for i in x], metrics["hallucination_score"], width, label="Hallucination", color="red")
 
         plt.xlabel("Models")
         plt.ylabel("Score (%)")
