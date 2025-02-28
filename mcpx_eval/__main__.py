@@ -24,7 +24,7 @@ def print_result(result):
                 "Failed Calls",
                 "Tool Use %",
                 "Accuracy %",
-                "Helpfulness %",
+                "Completeness %",
                 "Quality %",
                 "Hallucination Score",
             ],
@@ -139,7 +139,7 @@ def json_summary(args):
         print(formatted_json)
 
     # If visualization is requested, create and open it
-    output_path = args.viz_output
+    output_path = args.html
     html = visualize_json(summary, output_path)
     # Also save a copy to the specified location if provided
     if output_path:
@@ -208,45 +208,29 @@ async def run():
     summary_parser.add_argument("name", help="Test name to summarize")
 
     # JSON summary command
-    json_parser = subparsers.add_parser(
-        "json", help="Generate JSON summary of all test data"
+    gen_parser = subparsers.add_parser(
+        "gen", help="Generate JSON summary of all test data"
     )
-    json_parser.add_argument(
+    gen_parser.add_argument(
         "--name",
         "-n",
         help="Filter results to a specific test name",
     )
-    json_parser.add_argument(
+    gen_parser.add_argument(
         "--output",
         "-o",
         help="Output JSON file path (default: print to stdout)",
     )
-    json_parser.add_argument(
+    gen_parser.add_argument(
         "--show",
         "-s",
         action="store_true",
         help="Create an interactive HTML visualization of the JSON data",
     )
-    json_parser.add_argument(
-        "--viz-output",
+    gen_parser.add_argument(
+        "--html",
         help="Output path for HTML visualization (optional)",
     )
-
-    # JSON visualization command (standalone)
-    viz_json_parser = subparsers.add_parser(
-        "html", help="Visualize JSON data from a file"
-    )
-    viz_json_parser.add_argument(
-        "input",
-        help="Input JSON file path",
-    )
-    viz_json_parser.add_argument(
-        "--output",
-        "-o",
-        help="Output HTML file path (optional)",
-    )
-
-    # Visualization commands removed
 
     # Global options
     parser.add_argument(
@@ -282,28 +266,10 @@ async def run():
         summary(args)
         return
 
-    # JSON summary command
-    elif command == "json":
+    # gen command
+    elif command == "gen":
         json_summary(args)
         return
-
-    # JSON visualization command
-    elif command == "html":
-        import json
-
-        try:
-            with open(args.input, "r") as f:
-                data = json.load(f)
-            visualize_json(data, args.output)
-        except FileNotFoundError:
-            print(f"Error: File '{args.input}' not found.")
-            print(
-                f"Generate a JSON file first with: uv run python -m mcpx_eval json -o {args.input}"
-            )
-            return
-        except json.JSONDecodeError:
-            print(f"Error: '{args.input}' is not a valid JSON file.")
-            return
 
     # Test command (default)
     else:
@@ -380,18 +346,15 @@ def main():
 
     # Print helpful usage examples at the end
     print("\nUsage examples:")
-    print("  Generate JSON summary:                uv run python -m mcpx_eval json")
+    print("  Generate JSON summary:                uv run python -m mcpx_eval gen")
     print(
-        "  Generate and visualize JSON:          uv run python -m mcpx_eval json --show"
+        "  Open HTML scoreboard in browser:        uv run python -m mcpx_eval gen --show"
     )
     print(
-        "  Save JSON to file:                    uv run python -m mcpx_eval json -o results.json"
+        "  Save JSON to file:                      uv run python -m mcpx_eval gen --json results.json"
     )
     print(
-        "  Visualize existing JSON file:         uv run python -m mcpx_eval html results.json"
-    )
-    print(
-        "  Save visualization to HTML:           uv run python -m mcpx_eval html results.json -o viz.html"
+        "  Generate HTML scoreboard:               uv run python -m mcpx_eval gen --html out.html"
     )
 
 
