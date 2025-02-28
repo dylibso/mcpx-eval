@@ -557,6 +557,11 @@ def visualize_json(data, output_path=None):
                         redundantCallsCell.textContent = ((model.redundant_tool_calls || 0).toFixed(1));
                         row.appendChild(redundantCallsCell);
 
+                        // Failed Tool Calls
+                        const failedCallsCell = document.createElement('td');
+                        failedCallsCell.textContent = ((model.failed_tool_calls || 0).toFixed(1));
+                        row.appendChild(failedCallsCell);
+
                         tbody.appendChild(row);
 
                         // False claims are not displayed in this view
