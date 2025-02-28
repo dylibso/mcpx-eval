@@ -17,8 +17,7 @@ def visualize_json(data, output_path=None):
             "accuracy": [models[m]["accuracy"] for m in model_names],
             "tool_use": [models[m]["tool_use"] for m in model_names],
             "completeness": [models[m]["completeness"] for m in model_names],
-            "quality": [models[m]["quality"] for m in model_names],
-            "duration": [models[m]["duration"] for m in model_names]
+            "quality": [models[m]["quality"] for m in model_names]
         }
 
         # Sort by quality score
@@ -31,28 +30,18 @@ def visualize_json(data, output_path=None):
 
         plt.figure(figsize=(15, 8))
         x = range(len(model_names))
-        width = 0.15  # Narrower bars to fit more metrics
+        width = 0.2  # Wider bars now that we have one less metric
 
         # Plot each metric with offset positions
-        plt.bar([i - width*2 for i in x], metrics["accuracy"], width, label="Accuracy", color="skyblue")
-        plt.bar([i - width for i in x], metrics["tool_use"], width, label="Tool Use", color="lightgreen")
-        plt.bar([i for i in x], metrics["completeness"], width, label="Completeness", color="orange")
-        plt.bar([i + width for i in x], metrics["quality"], width, label="Quality", color="purple")
-        
-        # Add duration as a line plot on secondary y-axis
-        ax2 = plt.twinx()
-        ax2.plot([i for i in x], metrics["duration"], 'r-', label="Duration", linewidth=2, marker='o')
-        ax2.set_ylabel("Duration (seconds)", color='red')
-        ax2.tick_params(axis='y', labelcolor='red')
+        plt.bar([i - width*1.5 for i in x], metrics["accuracy"], width, label="Accuracy (blue)", color="skyblue")
+        plt.bar([i - width*0.5 for i in x], metrics["tool_use"], width, label="Tool Use (green)", color="lightgreen")
+        plt.bar([i + width*0.5 for i in x], metrics["completeness"], width, label="Completeness (orange)", color="orange")
+        plt.bar([i + width*1.5 for i in x], metrics["quality"], width, label="Quality (purple)", color="purple")
 
         plt.xlabel("Models")
         plt.ylabel("Score (%)")
         plt.xticks(x, model_names, rotation=45, ha="right")
-        
-        # Combine legends from both axes
-        lines1, labels1 = plt.gca().get_legend_handles_labels()
-        lines2, labels2 = ax2.get_legend_handles_labels()
-        ax2.legend(lines1 + lines2, labels1 + labels2, loc='upper right')
+        plt.legend(loc='upper right', title="Metrics")
         
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
