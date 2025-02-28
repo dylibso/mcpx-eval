@@ -387,8 +387,9 @@ def visualize_json(data, output_path=None):
                     // Failed Calls
                     const failedCallsCell = document.createElement('td');
                     failedCallsCell.textContent = (model.failed_tool_calls || 0).toFixed(1);
-                    if (model.failed_tool_calls === bestWorst.failed_tool_calls.best && model.failed_tool_calls === 0) failedCallsCell.className = 'best';
-                    else if (model.failed_tool_calls === bestWorst.failed_tool_calls.worst && model.failed_tool_calls > 0) failedCallsCell.className = 'worst';
+                    const failedCalls = model.failed_tool_calls || 0;
+                    if (failedCalls === 0) failedCallsCell.className = 'best';
+                    else if (failedCalls === bestWorst.failed_tool_calls.worst && failedCalls > 0) failedCallsCell.className = 'worst';
                     row.appendChild(failedCallsCell);
 
                     tableBody.appendChild(row);
