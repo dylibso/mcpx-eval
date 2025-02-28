@@ -17,7 +17,8 @@ def visualize_json(data, output_path=None):
             "accuracy": [models[m]["accuracy"] for m in model_names],
             "tool_use": [models[m]["tool_use"] for m in model_names],
             "completeness": [models[m]["completeness"] for m in model_names],
-            "quality": [models[m]["quality"] for m in model_names]
+            "quality": [models[m]["quality"] for m in model_names],
+            "hallucination": [models[m]["hallucination_score"] for m in model_names]
         }
 
         # Sort by quality score
@@ -37,7 +38,7 @@ def visualize_json(data, output_path=None):
         plt.bar([i - width for i in x], metrics["tool_use"], width, label="Tool Use", color="lightgreen")
         plt.bar([i for i in x], metrics["completeness"], width, label="Completeness", color="orange")
         plt.bar([i + width for i in x], metrics["quality"], width, label="Quality", color="purple")
-        plt.bar([i + width*2 for i in x], metrics["hallucination_score"], width, label="Hallucination", color="red")
+        plt.bar([i + width*2 for i in x], metrics["hallucination"], width, label="Hallucination", color="red")
 
         plt.xlabel("Models")
         plt.ylabel("Score (%)")
