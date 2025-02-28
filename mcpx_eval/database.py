@@ -126,6 +126,14 @@ class Database:
         )
 
         if df.empty:
+            print(f"No results found in database for test: {name}")
+            print("Available tests:")
+            tests = pd.read_sql_query("SELECT DISTINCT test_name FROM eval_results", self.conn)
+            if tests.empty:
+                print("  No tests have been run yet")
+            else:
+                for test in tests['test_name']:
+                    print(f"  - {test}")
             return Results(scores=[])
 
         # Convert false_claims and tool_analysis from JSON strings

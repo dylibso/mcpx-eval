@@ -89,6 +89,13 @@ def print_result(result):
 def summary(args):
     db = Database()
     res = db.average_results(args.name)
+    if not res.scores:
+        return  # Database class now handles empty results messaging
+    
+    print(f"\nTest Summary: {args.name}")
+    print("=" * (14 + len(args.name)))
+    print(f"Number of results: {len(res.scores)}\n")
+    
     for result in res.scores:
         print_result(result)
 
