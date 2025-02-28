@@ -369,10 +369,10 @@ def visualize_json(data, output_path=None):
                     toolCallsCell.textContent = (model.tool_calls || 0).toFixed(1);
                     row.appendChild(toolCallsCell);
 
-                    // Test Count
-                    const testCountCell = document.createElement('td');
-                    testCountCell.textContent = model.test_count || model.runs || 'N/A';
-                    row.appendChild(testCountCell);
+                    // Runs Count
+                    const runsCell = document.createElement('td');
+                    runsCell.textContent = model.runs || model.test_count || 'N/A';
+                    row.appendChild(runsCell);
 
                     tableBody.appendChild(row);
                 });
@@ -450,7 +450,7 @@ def visualize_json(data, output_path=None):
                     const headerRow = document.createElement('tr');
 
                     ['Rank', 'Model', 'Average Score', 'Accuracy', 'Tool Use', 'Clarity', 'Helpfulness',
-                     'Overall', 'Hallucination', 'Duration (s)', 'Tool Calls', 'Redundant Calls', 'Failed Calls', 'Test Count'].forEach(header => {
+                     'Overall', 'Hallucination', 'Duration (s)', 'Tool Calls', 'Redundant Calls', 'Failed Calls', 'Runs'].forEach(header => {
                         const th = document.createElement('th');
                         th.textContent = header;
                         headerRow.appendChild(th);
