@@ -99,6 +99,9 @@ class Score(BaseModel):
     redundant_tool_calls: int = Field(
         0, description="Number of redundant or unnecessary tool calls"
     )
+    failed_tool_calls: int = Field(
+        0, description="Number of failed tool calls"
+    )
 
 
     def to_dataframe(self) -> pd.DataFrame:
