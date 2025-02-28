@@ -13,40 +13,47 @@ def visualize_json(data, output_path=None):
 
         models = data["total"]["models"]
         model_names = list(models.keys())
-        accuracies = [models[m]["accuracy"] for m in model_names]
-        tool_scores = [models[m]["tool_use"] for m in model_names]
+        metrics = {
+            "accuracy": [models[m]["accuracy"] for m in model_names],
+            "tool_use": [models[m]["tool_use"] for m in model_names],
+            "completeness": [models[m]["completeness"] for m in model_names],
+            "quality": [models[m]["quality"] for m in model_names],
+            "duration": [models[m]["duration"] for m in model_names]
+        }
 
-        # Sort by overall score
+        # Sort by quality score
         sorted_indices = sorted(
-            range(len(tool_scores)), key=lambda k: tool_scores[k], reverse=True
+            range(len(metrics["quality"])), key=lambda k: metrics["quality"][k], reverse=True
         )
         model_names = [model_names[i] for i in sorted_indices]
-        accuracies = [accuracies[i] for i in sorted_indices]
-        tool_scores = [tool_scores[i] for i in sorted_indices]
+        for metric in metrics:
+            metrics[metric] = [metrics[metric][i] for i in sorted_indices]
 
-        plt.figure(figsize=(12, 6))
+        plt.figure(figsize=(15, 8))
         x = range(len(model_names))
-        width = 0.35
+        width = 0.15  # Narrower bars to fit more metrics
 
-        plt.bar(
-            [i - width / 2 for i in x],
-            accuracies,
-            width,
-            label="Accuracy",
-            color="skyblue",
-        )
-        plt.bar(
-            [i + width / 2 for i in x],
-            tool_scores,
-            width,
-            label="Tool Use",
-            color="lightgreen",
-        )
+        # Plot each metric with offset positions
+        plt.bar([i - width*2 for i in x], metrics["accuracy"], width, label="Accuracy", color="skyblue")
+        plt.bar([i - width for i in x], metrics["tool_use"], width, label="Tool Use", color="lightgreen")
+        plt.bar([i for i in x], metrics["completeness"], width, label="Completeness", color="orange")
+        plt.bar([i + width for i in x], metrics["quality"], width, label="Quality", color="purple")
+        
+        # Add duration as a line plot on secondary y-axis
+        ax2 = plt.twinx()
+        ax2.plot([i for i in x], metrics["duration"], 'r-', label="Duration", linewidth=2, marker='o')
+        ax2.set_ylabel("Duration (seconds)", color='red')
+        ax2.tick_params(axis='y', labelcolor='red')
 
         plt.xlabel("Models")
         plt.ylabel("Score (%)")
         plt.xticks(x, model_names, rotation=45, ha="right")
-        plt.legend()
+        
+        # Combine legends from both axes
+        lines1, labels1 = plt.gca().get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax2.legend(lines1 + lines2, labels1 + labels2, loc='upper right')
+        
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
 
