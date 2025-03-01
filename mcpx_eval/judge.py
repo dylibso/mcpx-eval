@@ -163,7 +163,7 @@ class Judge:
 <direction>
 The maximum number of tools calls is: {max_tool_calls}
 
-Today's date and time: {datetime.now().isoformat())}
+Today's date and time: {datetime.now().isoformat()}
 
 For the hallucination_score metric (0-100 scale, lower is better), carefully check for any false statements,
 incorrect information, or made-up facts in the response and list them in the false_claims field.
