@@ -69,10 +69,6 @@ class Judge:
                     elif model.provider == "google":
                         chat = Chat(Gemini(config=model.config))
                     elif model.provider == "ollama":
-                        model.config.system = """
-                        You are a helpful large language model with tool calling access. Use the available tools
-                        to determine results you cannot answer on your own
-                        """
                         chat = Chat(Ollama(config=model.config))
                     else:
                         logger.error(
@@ -166,6 +162,8 @@ class Judge:
                 user_prompt=f"""
 <direction>
 The maximum number of tools calls is: {max_tool_calls}
+
+Today's date and time: {datetime.now().isoformat())}
 
 For the hallucination_score metric (0-100 scale, lower is better), carefully check for any false statements,
 incorrect information, or made-up facts in the response and list them in the false_claims field.
