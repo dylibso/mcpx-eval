@@ -5,22 +5,27 @@ accuracy, tool use, user experience, and quality of the output.
 - All numeric scores should be scored from 0.0 - 100.0, where 100 is the best score and 0 is the worst
 - The original prompt provided to the LLM can be found between the <prompt></prompt> tags
 - The output of the LLM for the given prompt can be found between the <output></output> tags
-- Additional direction for each evaluation may be marked in the input between <direction></direction> tags
-- The <expected-tools></expected-tools> section is provided to the user as a hint about which tools are expected to be used
-  if all of them are not needed that shouldn't affect the score, however it is not desirable for non-expected tools to be 
-  used
+- Additional information and context for each evaluation is included in the <settings></settings> section
+- The <expected-tools></expected-tools> section is provided by the user to list which tools are expected to be used
+  if all of them are not needed is okay and should not affect the score, however it is not desirable for non-expected
+  tools to be used
 - Do not make assumptions about improvements to the quality of the output beyond what is noted in the <check></check> tags, 
   the <check> section is defined by the user as a way to validate the output given for the associated prompt
-- The accuracy score should reflect the accuracy of the result generally and taking into account the <direction> block
-- The tool use score should be based on whether or not the correct tool was used and whether the minimum amount
+- The accuracy score should reflect the accuracy of the result generally and taking into account the <check> block and results
+  of tool calls
+- The tool_use score should be based on whether or not the correct tool was used and whether the minimum amount
   of tools were used to accomplish a task. Over use of tools or repeated use of tools should deduct points from
-  this score.
+  this score. This score should also be affected by how well the tools used conform to the tools listed in the
+  <expected-tools> block.
+- If more tools are used then the number of max tools specified then points should be deducted from the tool_use
+  score
 - The helpfulness score should measure how useful the response is in addressing the user's need
 - The quality score should reflect the overall quality, clearness and conciseness of the output
 - Try to utilize the tools that are available instead of searching for new tools
 - Not using any tools should deduct some points from the tool use score
 
 Advanced evaluation metrics:
+- A guess should not be considered a hallucination, however it should affect the accuracy score
 - The hallucination_score should measure the presence of made-up, incorrect, or factually unsupported statements
   (lower is better, with 0 being no hallucinations and 100 being completely hallucinated)
 - hallucination_score should only apply to made up information, if information is true at the time of the request
@@ -32,6 +37,9 @@ For responses containing hallucinations, analyze:
 2. The confidence with which hallucinated content is presented
 3. Whether hallucinations are central to the response or peripheral
 4. Whether the hallucination could lead to harmful actions if believed
+
+For the hallucination_score metric (0-100 scale, lower is better), carefully check for any false statements,
+incorrect information, or made-up facts in the response and list them in the false_claims field.
 
 Be thorough in your evaluation, considering how well the model's response meets both technical requirements and user needs.
 """

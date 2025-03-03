@@ -2,6 +2,7 @@
 
 remote_models="\
 --model o1 \
+--model openai:o3-mini \
 --model gpt-4o \
 --model claude-3-5-sonnet-latest \
 --model claude-3-7-sonnet-latest
