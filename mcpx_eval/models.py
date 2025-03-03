@@ -142,6 +142,7 @@ class Test:
     expected_tools: List[str]
     models: List[str]
     max_tool_calls: int | None
+    profile: str | None
 
     def __init__(
         self,
@@ -151,6 +152,7 @@ class Test:
         models: List[str],
         expected_tools: List[str],
         max_tool_calls: int | None = None,
+        profile: str | None = None,
     ):
         self.name = name
         self.prompt = prompt
@@ -158,6 +160,7 @@ class Test:
         self.models = models
         self.expected_tools = expected_tools
         self.max_tool_calls = max_tool_calls
+        self.profile = profile
 
     @staticmethod
     def load(path) -> "Test":
@@ -178,6 +181,7 @@ class Test:
                 t.name = data.get("name", t.name)
                 t.prompt = data.get("prompt", t.prompt)
                 t.check = data.get("check", t.check)
+                t.profile = data.get("profile", t.profile)
                 t.models = data.get("models", t.models)
                 t.max_tool_calls = data.get("max-tool-calls", t.max_tool_calls)
                 t.expected_tools.extend(data.get("expected-tools", []))
@@ -189,4 +193,5 @@ class Test:
             data.get("models", []),
             data.get("expected-tools", []),
             max_tool_calls=data.get("max-tool-calls"),
+            profile=data.get("profile"),
         )

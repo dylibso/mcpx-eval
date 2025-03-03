@@ -284,6 +284,8 @@ async def run():
         test = None
         if hasattr(args, "config") and args.config is not None:
             test = Test.load(args.config)
+            if args.profile:
+                test.profile = args.profile
             for model in args.model:
                 if args.profile:
                     if "/" in model:
@@ -302,6 +304,7 @@ async def run():
                 prompt=args.prompt or "",
                 check=args.check or "",
                 models=args.model,
+                profile=args.profile,
                 max_tool_calls=args.max_tool_calls,
                 expected_tools=args.expected_tools,
             )
@@ -310,12 +313,8 @@ async def run():
         logger.info(
             f"Running {test.name}: {', '.join(test.models)} ({iterations} iteration{'s' if iterations > 1 else ''})"
         )
-        judge = Judge(models=test.models)
+        judge = Judge(models=test.models, profile=test.profile)
         judge.db.save_test(test)
-
-        tools = list(judge.agent.client.tools.keys())
-
-        logger.info(f"Found tools: {', '.join(tools)}")
 
         all_results = []
         total_duration = 0

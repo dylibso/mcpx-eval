@@ -21,11 +21,14 @@ class Judge:
         self,
         models: List[Model | str] | None = None,
         db: Database | None = None,
+        profile: str | None = None,
     ):
         self.db = db or Database()
         self.agent = Agent(
             "claude-3-5-sonnet-latest", result_type=Score, system_prompt=SYSTEM_PROMPT
         )
+        if profile is not None:
+            self.agent.client.set_profile(profile)
         self.models = []
         if models is not None:
             for model in models:
@@ -45,13 +48,18 @@ class Judge:
 
     async def run_test(self, test: Test, save=True) -> Results:
         results = await self.run(
-            test.prompt, test.check, test.expected_tools, max_tool_calls=test.max_tool_calls
+            test.prompt,
+            test.check,
+            test.expected_tools,
+            max_tool_calls=test.max_tool_calls,
         )
         if save:
             self.db.save_results(test.name, results)
         return results
 
-    async def run(self, prompt, check, expected_tools, max_tool_calls: int | None = None) -> Results:
+    async def run(
+        self, prompt, check, expected_tools, max_tool_calls: int | None = None
+    ) -> Results:
         m = []
         t = timedelta(seconds=0)
         model_cache = {}
@@ -171,7 +179,7 @@ Current date and time: {datetime.now().isoformat()}
 {data}
 </output>
 <check>{check}</check>
-<expected-tools>{', '.join(expected_tools)}</expected-tools>
+<expected-tools>{", ".join(expected_tools)}</expected-tools>
 """
             )
 
