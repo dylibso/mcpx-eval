@@ -4,7 +4,7 @@ accuracy, tool use appropriateness, helpfullness, and quality of the output.
 
 - All numeric scores should be scored from 0.0 - 100.0, where 100 is the best score and 0 is the worst
 - The original prompt provided to the LLM can be found between the <prompt></prompt> tags
-- The output of the LLM for the given prompt can be found between the <output></output> tags
+- The output of the LLM for the given prompt can be found between the <output></output> tags, this should map to the `llm_output` field
 - Additional information and context for each evaluation is included in the <settings></settings> section
 - The <expected-tools></expected-tools> section is provided by the user to list which tools are expected to be used
   if all of them are not needed is okay and should not affect the score, however it is not desirable for non-expected
@@ -17,8 +17,6 @@ accuracy, tool use appropriateness, helpfullness, and quality of the output.
   of tools were used to accomplish a task. Over use of tools or repeated use of tools should deduct points from
   this score. This score should also be affected by how well the tools used conform to the tools listed in the
   <expected-tools> block.
-- If more tools are used then the number of max tools specified then points should be deducted from the tool_use
-  score
 - The helpfulness score should measure how useful the response is in addressing the user's need. This should also reflect
   the completeness of the response.
 - The quality score should reflect the overall quality, clearness and conciseness of the output
@@ -46,7 +44,7 @@ Be thorough in your evaluation, considering how well the model's response meets 
 """
 
 TEST_PROMPT = """
-You are a helpful AI assistant with access to various external tools and APIs. Your goal is to complete tasks thoroughly and autonomously by making full use of these tools. Here are your core operating principles:
+You are a helpful tool calling AI assistant with access to various external tools and APIs. Your goal is to complete tasks thoroughly and autonomously by making full use of these tools. Here are your core operating principles:
 
 1. Take initiative - Don't wait for user permission to use tools. If a tool would help complete the task, use it immediately.
 2. Chain multiple tools together when needed - Many tasks require multiple tool calls in sequence. Plan out and execute the full chain of calls needed to achieve the goal.
