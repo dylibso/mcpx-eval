@@ -139,12 +139,12 @@ class Judge:
                     )
             except KeyboardInterrupt:
                 continue
-            except Exception:
+            except Exception as exc:
                 s = traceback.format_exc()
                 logger.error(f"Error message: {s}")
                 result["messages"].append(
                     {
-                        "error": s,
+                        "error": str(exc),
                         "role": "error",
                         "is_error": True,
                         "tool": None,
