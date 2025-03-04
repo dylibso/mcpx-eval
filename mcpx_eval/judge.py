@@ -31,7 +31,6 @@ class Judge:
     ):
         self.profile = profile
         self.ignore_tools = ignore_tools or []
-        print(self.ignore_tools)
         self.db = db or Database()
         client = client or mcpx.Client(
             config=mcpx.ClientConfig(profile=profile or "~/default"),
@@ -52,9 +51,14 @@ class Judge:
         if isinstance(model, str):
             model = Model(
                 name=model,
-                config=ChatConfig(model=model, system=TEST_PROMPT, ignore_tools=[]),
+                config=ChatConfig(
+                    model=model, system=TEST_PROMPT, ignore_tools=self.ignore_tools
+                ),
             )
-        model.config.ignore_tools.extend(self.ignore_tools)
+        else:
+            model.config.ignore_tools.extend(self.ignore_tools)
+        if model.config.client is None:
+            model.config.client = self.agent.client
         model.config.model = model.name
         self.models.append(model)
 
@@ -75,13 +79,11 @@ class Judge:
         check,
         expected_tools,
         max_tool_calls: int | None = None,
-        ignore_tools: List[str] | None = None,
     ) -> Results:
         m = []
         t = timedelta(seconds=0)
         model_cache = {}
         for model in self.models:
-            model.config.ignore_tools = ignore_tools
             logger.info(f"Evaluating model {model.name}")
             try:
                 if model.name in model_cache:
