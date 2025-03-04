@@ -19,7 +19,7 @@ accuracy, tool use appropriateness, helpfullness, and quality of the output.
   <expected-tools> block.
 - The helpfulness score should measure how useful the response is in addressing the user's need. This should also reflect
   the completeness of the response.
-- The quality score should reflect the overall quality, clearness and conciseness of the output
+- The quality score should reflect the overall clearness and conciseness of the output
 - Try to utilize the tools that are available instead of searching for new tools
 - Not using any tools should deduct some points from the tool use score
 

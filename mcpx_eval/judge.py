@@ -3,7 +3,7 @@ from typing import List
 from datetime import datetime, timedelta
 import json
 from mcpx_pydantic_ai import Agent
-from mcpx_py import Chat, Claude, OpenAI, Gemini, Ollama, ChatConfig
+from mcpx_py import Chat, Claude, OpenAI, Gemini, Ollama, ChatConfig, client as mcpx
 
 from .models import Score, Results, Test, Model
 from .database import Database
@@ -16,8 +16,9 @@ class Judge:
     agent: Agent
     model: str
     models: List[Model]
+    ignore_tools: List[str]
     db: Database
-    profile: str | None
+    profile: str | None = None
 
     def __init__(
         self,
@@ -25,27 +26,36 @@ class Judge:
         db: Database | None = None,
         profile: str | None = None,
         judge_model: str = "claude-3-5-sonnet-latest",
+        ignore_tools: List[str] | None = None,
+        client: mcpx.Client | None = None,
     ):
         self.profile = profile
+        self.ignore_tools = ignore_tools or []
+        print(self.ignore_tools)
         self.db = db or Database()
-        self.agent = Agent(judge_model, result_type=Score, system_prompt=SYSTEM_PROMPT)
-        if self.profile is not None:
-            self.agent.client.set_profile(self.profile)
+        client = client or mcpx.Client(
+            config=mcpx.ClientConfig(profile=profile or "~/default"),
+        )
+        self.agent = Agent(
+            judge_model, result_type=Score, system_prompt=SYSTEM_PROMPT, client=client
+        )
         self.models = []
         if models is not None:
             for model in models:
                 self.add_model(model)
 
-    def add_model(self, model: Model | str, profile: str | None = None):
+    def add_model(
+        self,
+        model: Model | str,
+        profile: str | None = None,
+    ):
         if isinstance(model, str):
             model = Model(
-                name=model, config=ChatConfig(model=model, system=TEST_PROMPT)
+                name=model,
+                config=ChatConfig(model=model, system=TEST_PROMPT, ignore_tools=[]),
             )
+        model.config.ignore_tools.extend(self.ignore_tools)
         model.config.model = model.name
-        if model.config.client is None:
-            model.config.client = self.agent.client
-        if profile is not None:
-            model.config.client.set_profile(profile)
         self.models.append(model)
 
     async def run_test(self, test: Test, save=True) -> Results:
@@ -60,12 +70,18 @@ class Judge:
         return results
 
     async def run(
-        self, prompt, check, expected_tools, max_tool_calls: int | None = None
+        self,
+        prompt,
+        check,
+        expected_tools,
+        max_tool_calls: int | None = None,
+        ignore_tools: List[str] | None = None,
     ) -> Results:
         m = []
         t = timedelta(seconds=0)
         model_cache = {}
         for model in self.models:
+            model.config.ignore_tools = ignore_tools
             logger.info(f"Evaluating model {model.name}")
             try:
                 if model.name in model_cache:

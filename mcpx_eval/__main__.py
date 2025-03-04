@@ -88,7 +88,7 @@ def print_result(result):
 
 
 def summary(args):
-    db = Database()
+    db = Database(args.db)
     res = db.average_results(args.name)
     if not res.scores:
         return  # Database class now handles empty results messaging
@@ -105,7 +105,7 @@ def json_summary(args):
     """Generate a JSON summary of test data"""
     import json
 
-    db = Database()
+    db = Database(args.db)
     summary = db.generate_json_summary()
 
     # Filter to specific test if requested
@@ -189,6 +189,13 @@ async def run():
         "--judge-model",
         default="claude-3-5-sonnet-latest",
         help="Model to use for Judge",
+    )
+    test_parser.add_argument(
+        "--ignore-tool",
+        "-x",
+        default=[],
+        help="Ignore tool",
+        action="append",
     )
     test_parser.add_argument(
         "--tool",
@@ -313,6 +320,7 @@ async def run():
                 profile=args.profile,
                 max_tool_calls=args.max_tool_calls,
                 expected_tools=args.expected_tools,
+                ignore_tools=args.ignore_tool
             )
 
         iterations = args.iter
@@ -322,11 +330,13 @@ async def run():
         db = None
         if args.db is not None:
             db = Database(args.db)
+
         judge = Judge(
             models=test.models,
             profile=test.profile,
             db=db,
             judge_model=args.judge_model,
+            ignore_tools=test.ignore_tools
         )
         judge.db.save_test(test)
 

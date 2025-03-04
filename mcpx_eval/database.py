@@ -8,7 +8,9 @@ from .models import Score, Results, Test
 class Database:
     conn: sqlite3.Connection
 
-    def __init__(self, path: str = "eval.db"):
+    def __init__(self, path: str | None = "eval.db"):
+        if path is None:
+            path = "eval.db"
         self.conn = sqlite3.connect(path)
 
         self.conn.executescript(

@@ -140,6 +140,7 @@ class Test:
     prompt: str
     check: str
     expected_tools: List[str]
+    ignore_tools: List[str]
     models: List[str]
     max_tool_calls: int | None
     profile: str | None
@@ -151,6 +152,7 @@ class Test:
         check: str,
         models: List[str],
         expected_tools: List[str],
+        ignore_tools: List[str] | None = None,
         max_tool_calls: int | None = None,
         profile: str | None = None,
     ):
@@ -161,6 +163,7 @@ class Test:
         self.expected_tools = expected_tools
         self.max_tool_calls = max_tool_calls
         self.profile = profile
+        self.ignore_tools = ignore_tools or []
 
     @staticmethod
     def load(path) -> "Test":
@@ -185,6 +188,7 @@ class Test:
                 t.models = data.get("models", t.models)
                 t.max_tool_calls = data.get("max-tool-calls", t.max_tool_calls)
                 t.expected_tools.extend(data.get("expected-tools", []))
+                t.ignore_tools.extend(data.get("ignore-tools", []))
             return t
         return Test(
             data.get("name", path),
@@ -192,6 +196,7 @@ class Test:
             data.get("check", ""),
             data.get("models", []),
             data.get("expected-tools", []),
+            ignore_tools=data.get("ignore-tools", []),
             max_tool_calls=data.get("max-tool-calls"),
             profile=data.get("profile"),
         )
