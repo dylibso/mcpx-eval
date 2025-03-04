@@ -14,21 +14,23 @@ logger = logging.getLogger(__name__)
 
 class Judge:
     agent: Agent
+    model: str
     models: List[Model]
     db: Database
+    profile: str | None
 
     def __init__(
         self,
         models: List[Model | str] | None = None,
         db: Database | None = None,
         profile: str | None = None,
+        judge_model: str = "claude-3-5-sonnet-latest",
     ):
+        self.profile = profile
         self.db = db or Database()
-        self.agent = Agent(
-            "claude-3-5-sonnet-latest", result_type=Score, system_prompt=SYSTEM_PROMPT
-        )
-        if profile is not None:
-            self.agent.client.set_profile(profile)
+        self.agent = Agent(judge_model, result_type=Score, system_prompt=SYSTEM_PROMPT)
+        if self.profile is not None:
+            self.agent.client.set_profile(self.profile)
         self.models = []
         if models is not None:
             for model in models:
@@ -166,6 +168,8 @@ class Judge:
                     }
 
             logger.info(f"Analyzing results of {model.name}")
+            if self.profile is None:
+                self.agent.client.set_profile(model.profile)
             res = await self.agent.run(
                 user_prompt=f"""
 <settings>

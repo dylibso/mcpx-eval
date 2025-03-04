@@ -173,6 +173,7 @@ async def run():
         "mcpx-eval", description="Open-ended LLM tool use evaluator"
     )
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
+    parser.add_argument("--db", default=None, help="SQLite3 database path")
 
     # Main test command (default)
     test_parser = subparsers.add_parser("test", help="Run evaluation tests")
@@ -183,6 +184,11 @@ async def run():
         default=[],
         help="Model to include in test",
         action="append",
+    )
+    test_parser.add_argument(
+        "--judge-model",
+        default="claude-3-5-sonnet-latest",
+        help="Model to use for Judge",
     )
     test_parser.add_argument(
         "--tool",
@@ -313,7 +319,15 @@ async def run():
         logger.info(
             f"Running {test.name}: {', '.join(test.models)} ({iterations} iteration{'s' if iterations > 1 else ''})"
         )
-        judge = Judge(models=test.models, profile=test.profile)
+        db = None
+        if args.db is not None:
+            db = Database(args.db)
+        judge = Judge(
+            models=test.models,
+            profile=test.profile,
+            db=db,
+            judge_model=args.judge_model,
+        )
         judge.db.save_test(test)
 
         all_results = []
