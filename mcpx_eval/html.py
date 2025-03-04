@@ -9,7 +9,7 @@ def visualize_json(data, output_path=None):
     def create_performance_graph(data):
         """Create a matplotlib graph of model performance"""
         if not data.get("total", {}).get("models"):
-            return None
+            return ""
 
         models = data["total"]["models"]
         model_names = list(models.keys())
