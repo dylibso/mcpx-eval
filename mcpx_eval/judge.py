@@ -2,6 +2,8 @@ import logging
 from typing import List
 from datetime import datetime, timedelta
 import json
+import traceback
+
 from mcpx_pydantic_ai import Agent
 from mcpx_py import Chat, Claude, OpenAI, Gemini, Ollama, ChatConfig, client as mcpx
 
@@ -84,9 +86,9 @@ class Judge:
         t = timedelta(seconds=0)
         model_cache = {}
         for model in self.models:
-            logger.info(f"Evaluating model {model.name}")
+            logger.info(f"Evaluating model {model.slug}")
             try:
-                if model.name in model_cache:
+                if model.slug in model_cache:
                     chat = model_cache[model.slug]
                     chat.provider.clear_history()
                 else:
@@ -102,7 +104,7 @@ class Judge:
                         logger.error(
                             f"Skipping invalid model provider: {model.provider}"
                         )
-                    model_cache[model.name] = chat
+                    model_cache[model.slug] = chat
                 result = {"messages": []}
                 tool_calls = 0
                 chat.provider.config.client.clear_cache()
@@ -111,7 +113,7 @@ class Judge:
                     tool = None
                     if response.tool is not None:
                         logger.info(f"Tool: {response.tool.name} {response.tool.input}")
-                        logger.debug(f"Result: {response.content}")
+                        logger.info(f"Result: {response.content}")
                         tool = {
                             "name": response.tool.name,
                             "input": response.tool.input,
@@ -137,11 +139,12 @@ class Judge:
                     )
             except KeyboardInterrupt:
                 continue
-            except Exception as exc:
-                logger.error(f"Error message: {str(exc)}")
+            except Exception:
+                s = traceback.format_exc()
+                logger.error(f"Error message: {s}")
                 result["messages"].append(
                     {
-                        "error": str(exc),
+                        "error": s,
                         "role": "error",
                         "is_error": True,
                         "tool": None,

@@ -608,11 +608,11 @@ wheels = [
 
 [[package]]
 name = "logfire-api"
-version = "3.6.4"
+version = "3.7.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f4/a7/b092d05c9e261eb20e2e2987492057fb0949428ee1caecdccccf07d78d6a/logfire_api-3.6.4.tar.gz", hash = "sha256:b2a3891c1112ff151bcc9274543d2ba26a8a30d40bd94c1ad3eb15fb9f4a3f08", size = 45308 }
+sdist = { url = "https://files.pythonhosted.org/packages/5e/86/3bda8a7fae48132aa33d39d6097736f9b5885cbee42dd44320d690605e04/logfire_api-3.7.0.tar.gz", hash = "sha256:72116b99086ac269cb6268cef71471b350bc9a34e519696cf812778f54217507", size = 45617 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a5/8b/c6ab461b119a9da374081a083d7a47533c5e4771760bc24cb37e20f789a5/logfire_api-3.6.4-py3-none-any.whl", hash = "sha256:92956a82610821fdac9581717a300cac83a0cb5f00c27db21999fedb527f1a76", size = 75106 },
+    { url = "https://files.pythonhosted.org/packages/67/bb/fe22650966532273ffb9cd46563fd2cf1965aafb17b0a955cb2bbacf5790/logfire_api-3.7.0-py3-none-any.whl", hash = "sha256:9f3def5f808b2af6d4ed15124b636054d55f2d29aa8ae871a6b87dfe48420bd0", size = 75577 },
 ]
 
 [[package]]
@@ -754,7 +754,7 @@ dev = [
 [[package]]
 name = "mcpx-py"
 version = "0.3.0"
-source = { git = "https://github.com/dylibso/mcpx-py#1d4798ea2de46a708229c2e569f2c581cc7252f3" }
+source = { git = "https://github.com/dylibso/mcpx-py#f1563d15c81a3f005bf1c2e50ebe0d7e58d3a0b0" }
 dependencies = [
     { name = "anthropic" },
     { name = "mcp-run" },
