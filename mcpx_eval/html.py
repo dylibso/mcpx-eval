@@ -379,9 +379,7 @@ def visualize_json(data, output_path=None):
                     // Tool Calls
                     const toolCallsCell = document.createElement('td');
                     toolCallsCell.textContent = (model.tool_calls || 0).toFixed(1);
-                    if (model.tool_calls === bestWorst.tool_calls.best && model.tool_calls > 0) toolCallsCell.className = 'best';
-                    else if (bestWorst.tool_calls.best !== bestWorst.tool_calls.worst &&
-                            model.tool_calls === bestWorst.tool_calls.worst) toolCallsCell.className = 'worst';
+                    // Don't highlight tool calls - it's not inherently better/worse to use more/fewer tools
                     row.appendChild(toolCallsCell);
 
                     // Redundant Calls
