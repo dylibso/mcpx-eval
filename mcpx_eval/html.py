@@ -40,10 +40,10 @@ def visualize_json(data, output_path=None):
         plt.bar([i + width for i in x], metrics["quality"], width, label="Quality", color="purple")
         plt.bar([i + width*2 for i in x], metrics["hallucination"], width, label="Hallucination", color="red")
 
-        plt.xlabel("Models")
-        plt.ylabel("Score (%)")
-        plt.xticks(x, model_names, rotation=45, ha="right")
-        plt.legend(loc='upper right', title="Metrics")
+        plt.xlabel("Models", fontsize=12)
+        plt.ylabel("Score (%)", fontsize=12)
+        plt.xticks(x, model_names, rotation=45, ha="right", fontsize=14)
+        plt.legend(loc='upper right', title="Metrics", fontsize=10)
         
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
