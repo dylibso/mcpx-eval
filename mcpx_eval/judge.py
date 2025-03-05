@@ -112,6 +112,8 @@ class Judge:
                 async for response in chat.send_message(prompt):
                     tool = None
                     if response.tool is not None:
+                        if response._error:
+                            continue
                         logger.info(f"Tool: {response.tool.name} {response.tool.input}")
                         logger.info(f"Result: {response.content}")
                         tool = {
@@ -155,7 +157,7 @@ class Judge:
             t += tt
             result["duration"] = f"{duration_seconds}s"
 
-            data = json.dumps(result)
+            data = json.dumps(result)[-199000:]
 
             # Analyze tool usage
             tool_analysis = {}
