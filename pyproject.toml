@@ -7,8 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "jinja2>=3.1.5",
     "matplotlib>=3.10.0",
-    "mcpx-py>=0.3.0",
-    "mcpx-pydantic-ai>=0.1.0",
+    "mcpx-py>=0.4.0",
     "pandas>=2.2.0",
 ]
 
@@ -16,8 +15,8 @@ dependencies = [
 package = true
 
 [tool.uv.sources]
-mcpx-py = { git = "https://github.com/dylibso/mcpx-py" }
-mcpx-pydantic-ai = { git = "https://github.com/dylibso/mcpx-pydantic-ai" }
+# mcpx-pydantic-ai = { git = "https://github.com/dylibso/mcpx-pydantic-ai" }
+mcpx-py = { git = "https://github.com/dylibso/mcpx-py", branch = "pydantic" }
 
 [dependency-groups]
 dev = [

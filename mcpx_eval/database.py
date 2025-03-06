@@ -18,7 +18,6 @@ class Database:
             CREATE TABLE IF NOT EXISTS tests (
                 id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL,
-                max_tool_calls INTEGER,
                 prompt TEXT NOT NULL,
                 prompt_check TEXT NOT NULL,
                 UNIQUE(name)
@@ -80,9 +79,9 @@ class Database:
     def save_test(self, test: "Test"):
         self.conn.execute(
             """
-            INSERT OR IGNORE INTO tests (name, max_tool_calls, prompt, prompt_check) VALUES (?, ?, ?, ?);
+            INSERT OR IGNORE INTO tests (name, prompt, prompt_check) VALUES (?, ?, ?);
             """,
-            (test.name, test.max_tool_calls, test.prompt, test.check),
+            (test.name, test.prompt, test.check),
         )
         self.conn.commit()
 
@@ -130,11 +129,13 @@ class Database:
         if df.empty:
             print(f"No results found in database for test: {name}")
             print("Available tests:")
-            tests = pd.read_sql_query("SELECT DISTINCT test_name FROM eval_results", self.conn)
+            tests = pd.read_sql_query(
+                "SELECT DISTINCT test_name FROM eval_results", self.conn
+            )
             if tests.empty:
                 print("  No tests have been run yet")
             else:
-                for test in tests['test_name']:
+                for test in tests["test_name"]:
                     print(f"  - {test}")
             return Results(scores=[])
 
