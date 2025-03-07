@@ -8,7 +8,7 @@ when presented with real world tools.
 
 ## Test configs
 
-The [configs/](https://github.com/dylibso/mcpx-eval/tree/main/configs) directory contains pre-defined evals
+The [tests/](https://github.com/dylibso/mcpx-eval/tree/main/tests) directory contains pre-defined evals
 
 ## Installation
 
