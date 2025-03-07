@@ -1,0 +1,22 @@
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+name: CI
+
+jobs:
+  test:
+    name: Test mcpx-eval
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - run: uv run python3 -m unittest

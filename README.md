@@ -6,9 +6,9 @@ A framework for evaluating open-ended tool use across various large language mod
 This means we're not only interested in the quality of the output, but also curious about the helpfulness of various models
 when presented with real world tools.
 
-## Tests
+## Test configs
 
-The [tests/](https://github.com/dylibso/mcpx-eval/tree/main/tests) directory contains pre-defined tests
+The [configs/](https://github.com/dylibso/mcpx-eval/tree/main/configs) directory contains pre-defined evals
 
 ## Installation
 
@@ -24,7 +24,7 @@ Run the `my-test` test for 10 iterations:
 mcpx-eval test --model ... --model ... --config my-test.toml --iter 10
 ```
 
-Generate an HTML scoreboard for all tests:
+Generate an HTML scoreboard for all evals:
 
 ```bash
 mcpx-eval gen --html results.html --show

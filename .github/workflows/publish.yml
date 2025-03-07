@@ -1,0 +1,29 @@
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "v*" ]
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  id-token: write
+
+name: Publish
+
+jobs:
+  publish:
+    name: Publish mcpx-eval
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: uv publish
+        run: |
+          uv build
+          uv publish dist/*

@@ -2,7 +2,7 @@ from mcpx_pydantic_ai import BaseModel, Field
 from typing import List
 import pandas as pd
 from dataclasses import dataclass
-from mcpx_py import ChatConfig, mcp_run
+from mcpx_py import mcp_run
 
 
 def parse_model(m: str) -> (str, str, str):
@@ -42,17 +42,15 @@ class Model:
     name: str
     profile: str
     provider: str
-    config: ChatConfig
 
-    def __init__(self, name: str, config: ChatConfig):
-        provider, n, profile = parse_model(name)
+    def __init__(self, name: str, profile: str | None = None):
+        provider, n, p = parse_model(name)
         self.provider = provider
         self.name = n
-        self.profile = profile
-        self.config = config
-        self.config.client = mcp_run.Client(
-            config=mcp_run.ClientConfig(profile=profile)
-        )
+        if profile is None:
+            self.profile = p
+        else:
+            self.profile = profile
 
     @property
     def slug(self):

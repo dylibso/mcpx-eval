@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import json
 import traceback
 
-from mcpx_py import Chat, ChatConfig
+from mcpx_py import Chat
 
 from .models import Score, Results, Test, Model
 from .database import Database
@@ -44,16 +44,8 @@ class Judge:
         if isinstance(model, str):
             model = Model(
                 name=model,
-                config=ChatConfig(
-                    model=model, system=TEST_PROMPT, ignore_tools=self.ignore_tools
-                ),
+                profile=profile,
             )
-        else:
-            model.config.ignore_tools.extend(self.ignore_tools)
-        if model.config.client is None:
-            model.config.client = self.agent.client
-        model.config.max_tokens = 4096 * 2
-        model.config.model = model.name
         self.models.append(model)
 
     async def run_test(self, test: Test, save=True) -> Results:
@@ -79,7 +71,11 @@ class Judge:
             result = {"messages": []}
             logger.info(f"Evaluating model {model.slug}")
             try:
-                chat = Chat(model.config)
+                chat = Chat(
+                    model=model.name,
+                    ignore_tools=self.ignore_tools,
+                    system_prompt=TEST_PROMPT,
+                )
                 response, messages = await chat.inspect(prompt)
             except KeyboardInterrupt:
                 continue
@@ -149,7 +145,12 @@ class Judge:
                     }
 
             logger.info(f"Analyzing results of {model.name}")
-            agent = Chat(model.config, result_type=Score, system_prompt=SYSTEM_PROMPT)
+            agent = Chat(
+                model=model.name,
+                ignore_tools=self.ignore_tools,
+                result_type=Score,
+                system_prompt=SYSTEM_PROMPT,
+            )
             res = await agent.send_message(f"""
 <settings>
 Current date and time: {datetime.now().isoformat()}
