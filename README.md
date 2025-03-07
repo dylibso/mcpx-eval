@@ -38,5 +38,5 @@ A test file is a TOML file containing the following fields:
 - `prompt` - prompt to test, this is passed to the LLM under test
 - `check` - prompt for the judge, this is used to determine the quality of the test output 
 - `expected-tools` - list of tool names that might be used
-- `max-tool-calls` - optional, limits the maximum number of tool calls before raising an error
+- `ignore-tools` - list of tools to ignore, they will not be available to the LLM
 - `import` - includes fields from another test TOML file
