@@ -2,7 +2,7 @@ from mcpx_pydantic_ai import BaseModel, Field
 from typing import List
 import pandas as pd
 from dataclasses import dataclass
-from mcpx_py import ChatConfig, client
+from mcpx_py import ChatConfig, mcp_run
 
 
 def parse_model(m: str) -> (str, str, str):
@@ -50,7 +50,9 @@ class Model:
         self.name = n
         self.profile = profile
         self.config = config
-        self.config.client = client.Client(config=client.ClientConfig(profile=profile))
+        self.config.client = mcp_run.Client(
+            config=mcp_run.ClientConfig(profile=profile)
+        )
 
     @property
     def slug(self):
@@ -60,6 +62,10 @@ class Model:
             return f"{self.name}/{self.profile.split('/', maxsplit=1)[1]}"
         return f"{self.name}/{self.profile}"
 
+    @property
+    def provider_and_name(self):
+        return f"{self.provder}/{self.name}"
+
 
 class Score(BaseModel):
     """
@@ -67,7 +73,7 @@ class Score(BaseModel):
     """
 
     model: str = Field("Name of model being scored")
-    duration: float = Field("Total time of call in seconds")
+    duration: float = Field("Duration of LLM generation in seconds")
     llm_output: str = Field(
         "Model output, this is the 'content' field of the final message from the LLM"
     )
@@ -142,7 +148,6 @@ class Test:
     expected_tools: List[str]
     ignore_tools: List[str]
     models: List[str]
-    max_tool_calls: int | None
     profile: str | None
 
     def __init__(
@@ -153,7 +158,6 @@ class Test:
         models: List[str],
         expected_tools: List[str],
         ignore_tools: List[str] | None = None,
-        max_tool_calls: int | None = None,
         profile: str | None = None,
     ):
         self.name = name
@@ -161,7 +165,6 @@ class Test:
         self.check = check
         self.models = models
         self.expected_tools = expected_tools
-        self.max_tool_calls = max_tool_calls
         self.profile = profile
         self.ignore_tools = ignore_tools or []
 
@@ -186,7 +189,6 @@ class Test:
                 t.check = data.get("check", t.check)
                 t.profile = data.get("profile", t.profile)
                 t.models = data.get("models", t.models)
-                t.max_tool_calls = data.get("max-tool-calls", t.max_tool_calls)
                 t.expected_tools.extend(data.get("expected-tools", []))
                 t.ignore_tools.extend(data.get("ignore-tools", []))
             return t
@@ -197,6 +199,5 @@ class Test:
             data.get("models", []),
             data.get("expected-tools", []),
             ignore_tools=data.get("ignore-tools", []),
-            max_tool_calls=data.get("max-tool-calls"),
             profile=data.get("profile"),
         )
