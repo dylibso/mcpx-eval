@@ -15,7 +15,7 @@ dependencies = [
 package = true
 
 [tool.uv.sources]
-mcpx-py = { git = "https://github.com/dylibso/mcpx-py" }
+mcpx-py = { git = "https://github.com/dylibso/mcpx-py", branch = "prepare-release-0.4.0" }
 
 [dependency-groups]
 dev = [

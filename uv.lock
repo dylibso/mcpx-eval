@@ -796,7 +796,7 @@ dev = [
 requires-dist = [
     { name = "jinja2", specifier = ">=3.1.5" },
     { name = "matplotlib", specifier = ">=3.10.0" },
-    { name = "mcpx-py", git = "https://github.com/dylibso/mcpx-py" },
+    { name = "mcpx-py", git = "https://github.com/dylibso/mcpx-py?branch=prepare-release-0.4.0" },
     { name = "pandas", specifier = ">=2.2.0" },
 ]
 
@@ -809,8 +809,8 @@ dev = [
 
 [[package]]
 name = "mcpx-py"
-version = "0.3.0"
-source = { git = "https://github.com/dylibso/mcpx-py#511fdb50a0fa3c1a9f35ac1bbb0145b34638bfbd" }
+version = "0.4.0"
+source = { git = "https://github.com/dylibso/mcpx-py?branch=prepare-release-0.4.0#0e4a43478ac30341baeefa7f09e3793433b956c7" }
 dependencies = [
     { name = "mcpx-pydantic-ai" },
     { name = "psutil" },
