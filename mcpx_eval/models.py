@@ -2,7 +2,6 @@ from mcpx_pydantic_ai import BaseModel, Field
 from typing import List
 import pandas as pd
 from dataclasses import dataclass
-from mcpx_py import mcp_run
 
 
 def parse_model(m: str) -> (str, str, str):

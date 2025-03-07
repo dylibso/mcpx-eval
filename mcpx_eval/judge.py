@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import json
 import traceback
 
-from mcpx_py import Chat
+from mcpx_py import Chat, mcp_run
 
 from .models import Score, Results, Test, Model
 from .database import Database
@@ -44,8 +44,9 @@ class Judge:
         if isinstance(model, str):
             model = Model(
                 name=model,
-                profile=profile,
             )
+        if profile is not None:
+            model.profile = profile
         self.models.append(model)
 
     async def run_test(self, test: Test, save=True) -> Results:
@@ -72,6 +73,9 @@ class Judge:
             logger.info(f"Evaluating model {model.slug}")
             try:
                 chat = Chat(
+                    client=mcp_run.Client(
+                        config=mcp_run.ClientConfig(profile=model.profile)
+                    ),
                     model=model.name,
                     ignore_tools=self.ignore_tools,
                     system_prompt=TEST_PROMPT,
@@ -88,7 +92,7 @@ class Judge:
             t += tt
             tool_calls = 0
             for msg in messages:
-                print(msg)
+                logger.info(f"Message: {msg}")
                 if hasattr(msg, "parts"):
                     for part in msg.parts:
                         if part.part_kind == "text":
@@ -144,8 +148,11 @@ class Judge:
                         "redundancy": redundancy_status,
                     }
 
-            logger.info(f"Analyzing results of {model.name}")
+            logger.info(f"Analyzing results of {model.slug}")
             agent = Chat(
+                client=mcp_run.Client(
+                    config=mcp_run.ClientConfig(profile=model.profile)
+                ),
                 model=model.name,
                 ignore_tools=self.ignore_tools,
                 result_type=Score,
