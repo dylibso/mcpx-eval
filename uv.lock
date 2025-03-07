@@ -759,7 +759,7 @@ dev = [
 requires-dist = [
     { name = "jinja2", specifier = ">=3.1.5" },
     { name = "matplotlib", specifier = ">=3.10.0" },
-    { name = "mcpx-py", git = "https://github.com/dylibso/mcpx-py?branch=pydantic" },
+    { name = "mcpx-py", git = "https://github.com/dylibso/mcpx-py" },
     { name = "pandas", specifier = ">=2.2.0" },
 ]
 
@@ -773,7 +773,7 @@ dev = [
 [[package]]
 name = "mcpx-py"
 version = "0.3.0"
-source = { git = "https://github.com/dylibso/mcpx-py?branch=pydantic#8e9ec140d191d69292d2c5fbf2b0c9ba3e7af165" }
+source = { git = "https://github.com/dylibso/mcpx-py#14efffb60e0b82cc9a440b102641bd382595a5f6" }
 dependencies = [
     { name = "mcpx-pydantic-ai" },
     { name = "ollama" },
@@ -783,16 +783,16 @@ dependencies = [
 
 [[package]]
 name = "mcpx-pydantic-ai"
-version = "0.3.3"
+version = "0.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mcp-run" },
     { name = "pydantic" },
     { name = "pydantic-ai" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8c/71/4ae04a5e1ac02368f1316952673e2f288acf6d61e11004eaafad74c2df5d/mcpx_pydantic_ai-0.3.3.tar.gz", hash = "sha256:3ecc0d8a04baab12659b90c62ed6b46228bf0f02cb43d42d649d65c590d4cb0d", size = 2532 }
+sdist = { url = "https://files.pythonhosted.org/packages/49/75/881f7ecc317d486020bef378527c4bd9a6bc074faaed73d3bd4749c13bcf/mcpx_pydantic_ai-0.4.0.tar.gz", hash = "sha256:99852eec3bdc66a93dcc9c9a4c6cca3b898dc7c0f553069b4a64027b070ccc87", size = 2680 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1a/94/6ef6c1e748ad36216b3437666898eae07e50f0661c18cd02adf9521680c1/mcpx_pydantic_ai-0.3.3-py3-none-any.whl", hash = "sha256:c085cb24b0432d0c3d808de1fcc652aa02143d71c72b0d19126736b409f71292", size = 2562 },
+    { url = "https://files.pythonhosted.org/packages/66/c6/b150787ecc239eb1ed6ae7719619aaf449e80a6bcc87f4577159a5c9351e/mcpx_pydantic_ai-0.4.0-py3-none-any.whl", hash = "sha256:1d42e4b0227a591229773aeedcfad49f3aba51e712d73deab4a5306317e94c45", size = 2711 },
 ]
 
 [[package]]

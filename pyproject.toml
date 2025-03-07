@@ -15,8 +15,7 @@ dependencies = [
 package = true
 
 [tool.uv.sources]
-# mcpx-pydantic-ai = { git = "https://github.com/dylibso/mcpx-pydantic-ai" }
-mcpx-py = { git = "https://github.com/dylibso/mcpx-py", branch = "pydantic" }
+mcpx-py = { git = "https://github.com/dylibso/mcpx-py" }
 
 [dependency-groups]
 dev = [
