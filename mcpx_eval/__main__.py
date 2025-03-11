@@ -218,12 +218,6 @@ async def run():
     )
     test_parser.add_argument("--config", help="Test config file")
     test_parser.add_argument(
-        "--prompt-save",
-        action="store_true",
-        default=False,
-        help="Prompt before saving the test results",
-    )
-    test_parser.add_argument(
         "--iter",
         "-i",
         default=1,
@@ -354,11 +348,9 @@ async def run():
                 logger.info(f"Iteration {i + 1}/{iterations}")
 
             # For multiple iterations, pass save=True to ensure each run is saved to DB
-            if args.prompt_save:
-                res = await judge.run_test(test, save="prompt")
-            else:
-                res = await judge.run_test(test, save=True)
+            res = await judge.run_test(test, save=True)
             total_duration += res.duration
+            logger.info(f"Result: {res.scores}")
             all_results.extend(res.scores)
 
             if iterations > 1:

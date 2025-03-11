@@ -56,12 +56,7 @@ class Judge:
             test.expected_tools,
         )
         if save:
-            if save == "prompt":
-                res = input("save test results? [y/n]").lower()
-                if res == "y" or res.lower() == "yes":
-                    self.db.save_results(test.name, results)
-            else:
-                self.db.save_results(test.name, results)
+            self.db.save_results(test.name, results)
         return results
 
     async def run(
