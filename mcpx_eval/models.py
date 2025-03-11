@@ -64,15 +64,14 @@ class Model:
         return f"{self.provder}/{self.name}"
 
 
-class Score(BaseModel):
+class ScoreModel(BaseModel):
     """
     Used to score the result of an LLM tool call
     """
 
-    model: str = Field(description="Name of model being scored")
-    duration: float = Field(0.0, description="Duration of LLM generation in seconds")
     llm_output: str = Field(
-        description="Model output, this is the 'content' field of the final message from the LLM"
+        "",
+        description="Model output, this is the 'content' field of the final message from the LLM",
     )
     description: str = Field("", description="Description of results for this model")
 
@@ -80,7 +79,6 @@ class Score(BaseModel):
     tool_use: float = Field(
         0.0, description="A score (0-100) of how appropriate the tool use is"
     )
-    tool_calls: int = Field(0.0, description="Number of tool calls used")
     accuracy: float = Field(
         0.0,
         description="A score (0-100) of how accurate the response is based on the output of the tool calls",
@@ -104,29 +102,48 @@ class Score(BaseModel):
         description="List of identified false claims or hallucinations in the response",
     )
 
+    # Tools
+    failed_tool_calls: int = Field(
+        0,
+        description="The number of failed tool calls, or tool calls that encountered an error",
+    )
+
+
+@dataclass
+class Score:
+    """
+    Used to score the result of an LLM tool call
+    """
+
+    score: ScoreModel
+    model: str
+    duration: float
+
     # Detailed tool use analysis
-    tool_analysis: dict = Field(
-        {},
-        description="Analysis of individual tool calls with success/relevance ratings",
-    )
-    redundant_tool_calls: int = Field(
-        0, description="Number of redundant or unnecessary tool calls"
-    )
-    failed_tool_calls: int = Field(0, description="Number of failed tool calls")
+    tool_analysis: dict
+    redundant_tool_calls: int
+    tool_calls: int
+
+    def __getattribute__(self, name):
+        if name == "score":
+            return object.__getattribute__(self, name)
+        if hasattr(self.score, name):
+            return getattr(self.score, name)
+        return object.__getattribute__(self, name)
 
     def to_dataframe(self) -> pd.DataFrame:
         """Convert results to a pandas DataFrame for analysis"""
         record = {
             "model": self.model,
             "duration": self.duration,
-            "tool_use": self.tool_use,
+            "tool_use": self.score.tool_use,
             "tool_calls": self.tool_calls,
-            "accuracy": self.accuracy,
-            "helpfulness": self.completeness,
-            "quality": self.quality,
-            "hallucination_score": self.hallucination_score,
+            "accuracy": self.score.accuracy,
+            "helpfulness": self.score.completeness,
+            "quality": self.score.quality,
+            "hallucination_score": self.store.hallucination_score,
             "redundant_tool_calls": self.redundant_tool_calls,
-            "false_claims_count": len(self.false_claims),
+            "false_claims_count": len(self.score.false_claims),
         }
         return pd.DataFrame(record)
 

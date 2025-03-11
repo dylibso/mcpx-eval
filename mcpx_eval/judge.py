@@ -6,7 +6,7 @@ import traceback
 
 from mcpx_py import Chat, mcp_run
 
-from .models import Score, Results, Test, Model
+from .models import ScoreModel, Score, Results, Test, Model
 from .database import Database
 from .constants import SYSTEM_PROMPT, TEST_PROMPT
 
@@ -56,7 +56,12 @@ class Judge:
             test.expected_tools,
         )
         if save:
-            self.db.save_results(test.name, results)
+            if save == "prompt":
+                res = input("save test results? [y/n]").lower()
+                if res == "y" or res.lower() == "yes":
+                    self.db.save_results(test.name, results)
+            else:
+                self.db.save_results(test.name, results)
         return results
 
     async def run(
@@ -156,7 +161,7 @@ class Judge:
                 ),
                 model=model.name,
                 ignore_tools=self.ignore_tools,
-                result_type=Score,
+                result_type=ScoreModel,
                 system_prompt=SYSTEM_PROMPT,
                 result_retries=10,
             )
@@ -174,14 +179,14 @@ Current date and time: {datetime.now().isoformat()}
 <expected-tools>{", ".join(expected_tools)}</expected-tools>
 """)
 
-            # Add additional metrics to the score
-            score_data = res.data
-
-            # Add tool analysis metrics and duration
-            score_data.tool_analysis = tool_analysis
-            score_data.redundant_tool_calls = redundant_tool_calls
-            score_data.duration = duration_seconds
-            score_data.model = model.slug
-
-            m.append(score_data)
+            m.append(
+                Score(
+                    score=res.data,
+                    model=model.slug,
+                    duration=duration_seconds,
+                    tool_analysis=tool_analysis,
+                    redundant_tool_calls=redundant_tool_calls,
+                    tool_calls=tool_calls,
+                )
+            )
         return Results(scores=m, duration=t.total_seconds())
