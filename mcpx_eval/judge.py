@@ -79,6 +79,7 @@ class Judge:
                     model=model.name,
                     ignore_tools=self.ignore_tools,
                     system_prompt=TEST_PROMPT,
+                    retries=5,
                 )
                 response, messages = await chat.inspect(prompt)
             except KeyboardInterrupt:
@@ -157,6 +158,7 @@ class Judge:
                 ignore_tools=self.ignore_tools,
                 result_type=Score,
                 system_prompt=SYSTEM_PROMPT,
+                result_retries=10,
             )
             res = await agent.send_message(f"""
 <settings>

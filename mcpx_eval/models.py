@@ -69,24 +69,29 @@ class Score(BaseModel):
     Used to score the result of an LLM tool call
     """
 
-    model: str = Field("Name of model being scored")
-    duration: float = Field("Duration of LLM generation in seconds")
+    model: str = Field(description="Name of model being scored")
+    duration: float = Field(0.0, description="Duration of LLM generation in seconds")
     llm_output: str = Field(
-        "Model output, this is the 'content' field of the final message from the LLM"
+        description="Model output, this is the 'content' field of the final message from the LLM"
     )
-    description: str = Field("Description of results for this model")
+    description: str = Field("", description="Description of results for this model")
 
     # Core metrics
-    tool_use: float = Field("A score (0-100) of how appropriate the tool use is")
-    tool_calls: int = Field("Number of tool calls used")
+    tool_use: float = Field(
+        0.0, description="A score (0-100) of how appropriate the tool use is"
+    )
+    tool_calls: int = Field(0.0, description="Number of tool calls used")
     accuracy: float = Field(
-        "A score (0-100) of how accurate the response is based on the output of the tool calls"
+        0.0,
+        description="A score (0-100) of how accurate the response is based on the output of the tool calls",
     )
     completeness: float = Field(
-        "A score (0-100) of how complete the response is according to the task at hand and <check> criteria"
+        0.0,
+        description="A score (0-100) of how complete the response is according to the task at hand and <check> criteria",
     )
     quality: float = Field(
-        "A score (0-100) of the response quality - this includes the usefullness and clarity of the output"
+        0.0,
+        description="A score (0-100) of the response quality - this includes the usefullness and clarity of the output",
     )
 
     # Hallucination metrics
@@ -127,8 +132,8 @@ class Score(BaseModel):
 
 
 class Results(BaseModel):
-    scores: List[Score] = Field("A list of scores for each model")
-    duration: float = Field("Total duration of all tests")
+    scores: List[Score] = Field([], description="A list of scores for each model")
+    duration: float = Field(0.0, description="Total duration of all tests")
 
     def to_dataframe(self) -> pd.DataFrame:
         """Convert results to a pandas DataFrame for analysis"""
