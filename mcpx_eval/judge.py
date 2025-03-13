@@ -51,16 +51,16 @@ class Judge:
         self.models.append(model)
 
     async def run_test(self, test: Test, save=True) -> Results:
-        if test.task:
+        if test.task is not None:
             client = mcp_run.Client(
                 config=mcp_run.ClientConfig(profile=mcp_run.ProfileSlug("~", "default"))
             )
             tasks = client.tasks
-            if test.name not in tasks:
+            if test.task not in tasks:
                 raise Exception(
-                    f"Invalid task, {test.name} not found in {test.profile}"
+                    f"Invalid task, {test.task} not found in {test.profile}"
                 )
-            test.prompt = tasks[test.name].prompt
+            test.prompt = tasks[test.task].prompt
         results = await self.run(
             pystache.render(test.prompt, test.vars),
             test.check,
@@ -102,7 +102,9 @@ class Judge:
                                     {"kind": part.part_kind, "text": part.content}
                                 )
                             elif part.part_kind == "tool-call":
-                                logger.info(f"Tool {part.tool_name}: {part.args}")
+                                logger.info(
+                                    f"Tool {part.tool_name}({part.tool_call_id}): {part.args}"
+                                )
                                 result["messages"].append(
                                     {
                                         "kind": part.part_kind,
@@ -114,6 +116,27 @@ class Judge:
                                     }
                                 )
                                 tool_calls += 1
+                    elif hasattr(node, "request"):
+                        for part in node.request.parts:
+                            if part.part_kind == "text":
+                                result["messages"].append(
+                                    {"kind": part.part_kind, "text": part.content}
+                                )
+                            elif part.part_kind == "tool-return":
+                                logger.info(
+                                    f"Tool returned {part.tool_name}({part.tool_call_id})"
+                                )
+                                logger.debug(
+                                    f"Tool result {part.tool_name}({part.tool_call_id}):\n{part.content}"
+                                )
+                                result["messages"].append(
+                                    {
+                                        "kind": part.part_kind,
+                                        "tool_name": part.tool_name,
+                                        "content": part.content,
+                                        "tool_call_id": part.tool_call_id,
+                                    }
+                                )
                     elif hasattr(node, "data"):
                         logger.info(f"Final result: {node.data.data}")
                         result["messages"].append(

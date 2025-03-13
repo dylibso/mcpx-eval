@@ -162,7 +162,7 @@ class Results(BaseModel):
 
 class Test:
     name: str
-    task: bool
+    task: str | None
     prompt: str
     check: str
     expected_tools: List[str]
@@ -181,7 +181,7 @@ class Test:
         ignore_tools: List[str] | None = None,
         profile: str | None = None,
         vars: Dict[str, Any] | None = None,
-        task: bool = False,
+        task: str | None = None,
     ):
         self.name = name
         self.prompt = prompt
@@ -217,7 +217,7 @@ class Test:
                 t.expected_tools.extend(data.get("expected-tools", []))
                 t.ignore_tools.extend(data.get("ignore-tools", []))
                 t.vars.update(**data.get("ignore-tools", {}))
-                t.task = t.task or data.get("task", False)
+                t.task = t.task or data.get("task")
             return t
         return Test(
             data.get("name", path),
@@ -228,5 +228,5 @@ class Test:
             ignore_tools=data.get("ignore-tools", []),
             vars=data.get("vars", {}),
             profile=data.get("profile", "~/default"),
-            task=data.get("task", False),
+            task=data.get("task"),
         )

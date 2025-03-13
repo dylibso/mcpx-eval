@@ -230,6 +230,17 @@ async def run():
         action="store_true",
         help="Don't save results in db",
     )
+    test_parser.add_argument(
+        "--task",
+        default=None,
+        help="Name of task from mcp.run to get prompt from",
+    )
+    test_parser.add_argument(
+        "--var",
+        default=[],
+        help="Expected tool",
+        action="append",
+    )
 
     # Summary command
     summary_parser = subparsers.add_parser("summary", help="Show test results summary")
@@ -301,6 +312,7 @@ async def run():
     # Test command (default)
     elif command == "test":
         test = None
+        name = args.name
         if hasattr(args, "config") and args.config is not None:
             test = Test.load(args.config)
             if args.profile:
@@ -315,11 +327,15 @@ async def run():
                 else:
                     test.models.append(model)
             if args.name is None or args.name == "":
-                args.name = test.name
+                name = test.name
 
+        vars = {}
+        for line in args.var:
+            s = line.split("=")
+            vars[s[0]] = s[1]
         if test is None:
             test = Test(
-                name=getattr(args, "name", ""),
+                name=name,
                 prompt=args.prompt or "",
                 check=args.check or "",
                 models=args.model,
@@ -327,6 +343,8 @@ async def run():
                 max_tool_calls=args.max_tool_calls,
                 expected_tools=args.expected_tools,
                 ignore_tools=args.ignore_tool,
+                vars=vars,
+                task=args.task,
             )
 
         iterations = args.iter
