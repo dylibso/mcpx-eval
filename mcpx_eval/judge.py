@@ -71,6 +71,7 @@ class Judge:
             start = datetime.now()
             result = {"messages": []}
             logger.info(f"Evaluating model {model.slug}")
+            tool_calls = 0
             try:
                 chat = Chat(
                     client=mcp_run.Client(
@@ -81,7 +82,32 @@ class Judge:
                     system_prompt=TEST_PROMPT,
                     retries=5,
                 )
-                response, messages = await chat.inspect(prompt)
+                async for node in chat.iter(prompt):
+                    if hasattr(node, "model_response"):
+                        for part in node.model_response.parts:
+                            if part.part_kind == "text":
+                                logger.info(part.content)
+                                result["messages"].append(
+                                    {"kind": part.part_kind, "text": part.content}
+                                )
+                            elif part.part_kind == "tool-call":
+                                logger.info(f"Tool {part.tool_name}: {part.args}")
+                                result["messages"].append(
+                                    {
+                                        "kind": part.part_kind,
+                                        "tool": {
+                                            "name": part.tool_name,
+                                            "input": part.args_as_dict(),
+                                        },
+                                        "tool_call_id": part.tool_call_id,
+                                    }
+                                )
+                                tool_calls += 1
+                    elif hasattr(node, "data"):
+                        logger.info(f"Final result: {node.data.data}")
+                        result["messages"].append(
+                            {"kind": "final_result", "text": node.data.data}
+                        )
             except KeyboardInterrupt:
                 continue
             except Exception:
@@ -91,27 +117,6 @@ class Judge:
             tt = datetime.now() - start
             duration_seconds = tt.total_seconds()
             t += tt
-            tool_calls = 0
-            for msg in messages:
-                logger.info(f"Message: {msg}")
-                if hasattr(msg, "parts"):
-                    for part in msg.parts:
-                        if part.part_kind == "text":
-                            result["messages"].append(
-                                {"kind": part.part_kind, "text": part.content}
-                            )
-                        elif part.part_kind == "tool-call":
-                            result["messages"].append(
-                                {
-                                    "kind": part.part_kind,
-                                    "tool": {
-                                        "name": part.tool_name,
-                                        "input": part.args_as_dict(),
-                                    },
-                                    "tool_call_id": part.tool_call_id,
-                                }
-                            )
-                            tool_calls += 1
 
             result["duration_in_seconds"] = f"{duration_seconds}s"
             result["number_of_tools_used"] = f"{tool_calls}"

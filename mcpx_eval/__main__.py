@@ -224,6 +224,12 @@ async def run():
         type=int,
         help="Number of times to run the test for each model",
     )
+    test_parser.add_argument(
+        "--no-save",
+        default=False,
+        action="store_true",
+        help="Don't save results in db",
+    )
 
     # Summary command
     summary_parser = subparsers.add_parser("summary", help="Show test results summary")
@@ -348,9 +354,11 @@ async def run():
                 logger.info(f"Iteration {i + 1}/{iterations}")
 
             # For multiple iterations, pass save=True to ensure each run is saved to DB
-            res = await judge.run_test(test, save=True)
+            res = await judge.run_test(test, save=not args.no_save)
             total_duration += res.duration
             logger.info(f"Result: {res.scores}")
+            if not args.no_save:
+                logger.info("Results saved to db")
             all_results.extend(res.scores)
 
             if iterations > 1:
