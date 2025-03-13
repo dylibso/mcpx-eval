@@ -18,12 +18,14 @@ def visualize_json(data, output_path=None):
             "tool_use": [models[m]["tool_use"] for m in model_names],
             "completeness": [models[m]["completeness"] for m in model_names],
             "quality": [models[m]["quality"] for m in model_names],
-            "hallucination": [models[m]["hallucination_score"] for m in model_names]
+            "hallucination": [models[m]["hallucination_score"] for m in model_names],
         }
 
         # Sort by quality score
         sorted_indices = sorted(
-            range(len(metrics["quality"])), key=lambda k: metrics["quality"][k], reverse=True
+            range(len(metrics["quality"])),
+            key=lambda k: metrics["quality"][k],
+            reverse=True,
         )
         model_names = [model_names[i] for i in sorted_indices]
         for metric in metrics:
@@ -34,17 +36,47 @@ def visualize_json(data, output_path=None):
         width = 0.15  # Narrower bars to fit all metrics
 
         # Plot each metric with offset positions
-        plt.bar([i - width*2 for i in x], metrics["accuracy"], width, label="Accuracy", color="skyblue")
-        plt.bar([i - width for i in x], metrics["tool_use"], width, label="Tool Use", color="lightgreen")
-        plt.bar([i for i in x], metrics["completeness"], width, label="Completeness", color="orange")
-        plt.bar([i + width for i in x], metrics["quality"], width, label="Quality", color="purple")
-        plt.bar([i + width*2 for i in x], metrics["hallucination"], width, label="Hallucination", color="red")
+        plt.bar(
+            [i - width * 2 for i in x],
+            metrics["accuracy"],
+            width,
+            label="Accuracy",
+            color="skyblue",
+        )
+        plt.bar(
+            [i - width for i in x],
+            metrics["tool_use"],
+            width,
+            label="Tool Use",
+            color="lightgreen",
+        )
+        plt.bar(
+            [i for i in x],
+            metrics["completeness"],
+            width,
+            label="Completeness",
+            color="orange",
+        )
+        plt.bar(
+            [i + width for i in x],
+            metrics["quality"],
+            width,
+            label="Quality",
+            color="purple",
+        )
+        plt.bar(
+            [i + width * 2 for i in x],
+            metrics["hallucination"],
+            width,
+            label="Hallucination",
+            color="red",
+        )
 
         plt.xlabel("Models", fontsize=12)
         plt.ylabel("Score (%)", fontsize=12)
         plt.xticks(x, model_names, rotation=45, ha="right", fontsize=14)
-        plt.legend(loc='upper right', title="Metrics", fontsize=10)
-        
+        plt.legend(loc="upper right", title="Metrics", fontsize=10)
+
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
 

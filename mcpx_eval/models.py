@@ -1,5 +1,5 @@
 from mcpx_pydantic_ai import BaseModel, Field
-from typing import List
+from typing import List, Dict, Any
 import pandas as pd
 from dataclasses import dataclass
 
@@ -162,12 +162,14 @@ class Results(BaseModel):
 
 class Test:
     name: str
+    task: bool
     prompt: str
     check: str
     expected_tools: List[str]
     ignore_tools: List[str]
     models: List[str]
     profile: str | None
+    vars: Dict[str, Any]
 
     def __init__(
         self,
@@ -178,6 +180,8 @@ class Test:
         expected_tools: List[str],
         ignore_tools: List[str] | None = None,
         profile: str | None = None,
+        vars: Dict[str, Any] | None = None,
+        task: bool = False,
     ):
         self.name = name
         self.prompt = prompt
@@ -186,6 +190,8 @@ class Test:
         self.expected_tools = expected_tools
         self.profile = profile
         self.ignore_tools = ignore_tools or []
+        self.vars = vars or {}
+        self.task = task
 
     @staticmethod
     def load(path) -> "Test":
@@ -210,6 +216,8 @@ class Test:
                 t.models = data.get("models", t.models)
                 t.expected_tools.extend(data.get("expected-tools", []))
                 t.ignore_tools.extend(data.get("ignore-tools", []))
+                t.vars.update(**data.get("ignore-tools", {}))
+                t.task = t.task or data.get("task", False)
             return t
         return Test(
             data.get("name", path),
@@ -218,5 +226,7 @@ class Test:
             data.get("models", []),
             data.get("expected-tools", []),
             ignore_tools=data.get("ignore-tools", []),
-            profile=data.get("profile"),
+            vars=data.get("vars", {}),
+            profile=data.get("profile", "~/default"),
+            task=data.get("task", False),
         )

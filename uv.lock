@@ -783,6 +783,7 @@ dependencies = [
     { name = "matplotlib" },
     { name = "mcpx-py" },
     { name = "pandas" },
+    { name = "pystache" },
 ]
 
 [package.dev-dependencies]
@@ -798,6 +799,7 @@ requires-dist = [
     { name = "matplotlib", specifier = ">=3.10.0" },
     { name = "mcpx-py", git = "https://github.com/dylibso/mcpx-py?branch=prepare-release-0.4.0" },
     { name = "pandas", specifier = ">=2.2.0" },
+    { name = "pystache", specifier = ">=0.6.7" },
 ]
 
 [package.metadata.requires-dev]
@@ -1235,6 +1237,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/8b/1a/3544f4f299a47911c2ab3710f534e52fea62a633c96806995da5d25be4b2/pyparsing-3.2.1.tar.gz", hash = "sha256:61980854fd66de3a90028d679a954d5f2623e83144b5afe5ee86f43d762e5f0a", size = 1067694 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/1c/a7/c8a2d361bf89c0d9577c934ebb7421b25dc84bf3a8e3ac0a40aed9acc547/pyparsing-3.2.1-py3-none-any.whl", hash = "sha256:506ff4f4386c4cec0590ec19e6302d3aedb992fdc02c761e90416f158dacf8e1", size = 107716 },
+]
+
+[[package]]
+name = "pystache"
+version = "0.6.7"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e3/e3/62df01d808819e28d7bd3a560e06c69dc31db60a9cd1ea03531d392d810c/pystache-0.6.7.tar.gz", hash = "sha256:55d8bb5aac450389369584b1627cecbe9069e13a09471a8fe783c44b64e94d5a", size = 101395 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/10/45/a0d78b1761824f808b3dfbf8ec5f4a27bba406cc4200701adde311cbbde5/pystache-0.6.7-py3-none-any.whl", hash = "sha256:08562f53b3afd9b55c1eb1d4980f4ced68e07dbed3aceffda8bb600286b93f76", size = 81623 },
 ]
 
 [[package]]

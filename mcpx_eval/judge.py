@@ -5,6 +5,7 @@ import json
 import traceback
 
 from mcpx_py import Chat, mcp_run
+import pystache
 
 from .models import ScoreModel, Score, Results, Test, Model
 from .database import Database
@@ -28,7 +29,7 @@ class Judge:
         judge_model: str = "claude-3-5-sonnet-latest",
         ignore_tools: List[str] | None = None,
     ):
-        self.profile = profile or "~/default"
+        self.profile = profile or mcp_run.ProfileSlug("~", "default")
         self.ignore_tools = ignore_tools or []
         self.db = db or Database()
         self.models = []
@@ -50,8 +51,18 @@ class Judge:
         self.models.append(model)
 
     async def run_test(self, test: Test, save=True) -> Results:
+        if test.task:
+            client = mcp_run.Client(
+                config=mcp_run.ClientConfig(profile=mcp_run.ProfileSlug("~", "default"))
+            )
+            tasks = client.tasks
+            if test.name not in tasks:
+                raise Exception(
+                    f"Invalid task, {test.name} not found in {test.profile}"
+                )
+            test.prompt = tasks[test.name].prompt
         results = await self.run(
-            test.prompt,
+            pystache.render(test.prompt, test.vars),
             test.check,
             test.expected_tools,
         )

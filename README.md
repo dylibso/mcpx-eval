@@ -40,3 +40,4 @@ A test file is a TOML file containing the following fields:
 - `expected-tools` - list of tool names that might be used
 - `ignore-tools` - list of tools to ignore, they will not be available to the LLM
 - `import` - includes fields from another test TOML file
+- `vars` - a dict of variables that will be used to format the prompt
