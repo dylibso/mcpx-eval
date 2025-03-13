@@ -309,7 +309,13 @@ async def run():
     # Test command (default)
     elif command == "test":
         test = None
-        name = args.name
+        name = args.name or args.task
+
+        vars = {}
+        for line in args.var:
+            s = line.split("=")
+            vars[s[0]] = s[1]
+
         if hasattr(args, "config") and args.config is not None:
             test = Test.load(args.config)
             if args.profile:
@@ -324,13 +330,16 @@ async def run():
                 else:
                     test.models.append(model)
             if args.name is None or args.name == "":
-                name = test.name
-
-        vars = {}
-        for line in args.var:
-            s = line.split("=")
-            vars[s[0]] = s[1]
-        if test is None:
+                if test.name is not None:
+                    name = test.name
+            test.vars.update(**vars)
+            test.expected_tools.extend(args.tool)
+            test.ignore_tools.extend(args.ignore)
+            test.task = args.task or test.task
+            test.prompt = args.prompt or test.prompt
+            test.check = args.check or test.check
+            test.name = args.name or test.name
+        else:
             test = Test(
                 name=name,
                 prompt=args.prompt or "",
