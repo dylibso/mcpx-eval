@@ -213,9 +213,6 @@ async def run():
 
     test_parser.add_argument("--prompt", help="Test prompt")
     test_parser.add_argument("--check", help="Test check")
-    test_parser.add_argument(
-        "--max-tool-calls", default=None, help="Maximum number of tool calls", type=int
-    )
     test_parser.add_argument("--config", help="Test config file")
     test_parser.add_argument(
         "--iter",
@@ -238,7 +235,7 @@ async def run():
     test_parser.add_argument(
         "--var",
         default=[],
-        help="Expected tool",
+        help="Template variable",
         action="append",
     )
 
@@ -340,8 +337,7 @@ async def run():
                 check=args.check or "",
                 models=args.model,
                 profile=args.profile,
-                max_tool_calls=args.max_tool_calls,
-                expected_tools=args.expected_tools,
+                expected_tools=args.tool,
                 ignore_tools=args.ignore_tool,
                 vars=vars,
                 task=args.task,
