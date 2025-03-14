@@ -96,10 +96,26 @@ class Judge:
                     mx = openai_compatible_model(
                         mk_http(
                             os.environ.get(
-                                "LLAMA_HOST",
-                                os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434"),
+                                f"{model.name.upper()}_HOST",
+                                os.environ.get(
+                                    "LLAMA_HOST",
+                                    os.environ.get(
+                                        "OLLAMA_HOST", "http://127.0.0.1:11434"
+                                    ),
+                                ),
                             )
                             + "/v1"
+                        ),
+                        model.name,
+                    )
+                elif model.provider == "openai":
+                    mx = openai_compatible_model(
+                        mk_http(
+                            os.environ.get(
+                                f"{model.name.upper()}_HOST",
+                                os.environ.get("OPENAI_HOST", "https://api.openai.com"),
+                            )
+                            + "/v1",
                         ),
                         model.name,
                     )
