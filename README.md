@@ -24,6 +24,12 @@ Run the `my-test` test for 10 iterations:
 mcpx-eval test --model ... --model ... --config my-test.toml --iter 10
 ```
 
+Or run a task directly from mcp.run:
+
+```bash
+mcpx-eval test --model .. --model .. --task my-task --iter 10
+```
+
 Generate an HTML scoreboard for all evals:
 
 ```bash

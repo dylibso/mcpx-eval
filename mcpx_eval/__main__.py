@@ -334,7 +334,7 @@ async def run():
                     name = test.name
             test.vars.update(**vars)
             test.expected_tools.extend(args.tool)
-            test.ignore_tools.extend(args.ignore)
+            test.ignore_tools.extend(args.ignore_tool)
             test.task = args.task or test.task
             test.prompt = args.prompt or test.prompt
             test.check = args.check or test.check
