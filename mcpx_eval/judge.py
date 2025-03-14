@@ -15,6 +15,12 @@ from .constants import SYSTEM_PROMPT, TEST_PROMPT
 logger = logging.getLogger(__name__)
 
 
+def mk_http(s):
+    if not s.startswith("http"):
+        return "http://" + s
+    return s
+
+
 class Judge:
     model: str
     models: List[Model]
@@ -86,9 +92,15 @@ class Judge:
             logger.info(f"Evaluating model {model.slug}")
             tool_calls = 0
             try:
-                if model.provider == "ollama":
+                if model.provider == "ollama" or model.provider == "llama":
                     m = openai_compatible_model(
-                        os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434") + "/v1",
+                        mk_http(
+                            os.environ.get(
+                                "LLAMA_HOST",
+                                os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434"),
+                            )
+                            + "/v1"
+                        ),
                         model.name,
                     )
                 else:
