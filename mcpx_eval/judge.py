@@ -51,15 +51,16 @@ class Judge:
         self.models.append(model)
 
     async def run_test(self, test: Test, save=True) -> Results:
+        profile = test.profile
+        if profile is None:
+            profile = self.profile or mcp_run.ProfileSlug("~", "default")
+        else:
+            profile = mcp_run.ProfileSlug.parse(profile)
         if test.task is not None:
-            client = mcp_run.Client(
-                config=mcp_run.ClientConfig(profile=mcp_run.ProfileSlug("~", "default"))
-            )
+            client = mcp_run.Client(config=mcp_run.ClientConfig(profile=profile))
             tasks = client.tasks
             if test.task not in tasks:
-                raise Exception(
-                    f"Invalid task, {test.task} not found in {test.profile}"
-                )
+                raise Exception(f"Invalid task, {test.task} not found in {profile}")
             test.prompt = tasks[test.task].prompt
         results = await self.run(
             pystache.render(test.prompt, test.vars),
