@@ -17,6 +17,9 @@ accuracy, tool use appropriateness, helpfullness, and quality of the output.
   of tools were used to accomplish a task. Over use of tools or repeated use of tools should deduct points from
   this score. This score should also be affected by how well the tools used conform to the tools listed in the
   <expected-tools> block.
+- If a tool call fails but is fixed after retrying after a reasonable amount of times it shouldn't be considered a failure
+  since some exploration may be needed.
+- Multiple failed tool calls that end up accomplishing the goal are preferred to fewer calls that don't.
 - The helpfulness score should measure how useful the response is in addressing the user's need. This should also reflect
   the completeness of the response.
 - The quality score should reflect the overall clearness and conciseness of the output

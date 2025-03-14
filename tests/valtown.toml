@@ -1,0 +1,13 @@
+name = "valtown"
+
+prompt = """
+create a publicly callable javascript function name getDateAndtime that returns the current date and time
+"""
+
+check = """
+call the created function using the val.town API to check the result
+"""
+
+expected-tools = [
+  "valtown"
+]
