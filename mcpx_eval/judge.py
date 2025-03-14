@@ -93,7 +93,7 @@ class Judge:
             tool_calls = 0
             try:
                 if model.provider == "ollama" or model.provider == "llama":
-                    m = openai_compatible_model(
+                    mx = openai_compatible_model(
                         mk_http(
                             os.environ.get(
                                 "LLAMA_HOST",
@@ -104,12 +104,12 @@ class Judge:
                         model.name,
                     )
                 else:
-                    m = model.name
+                    mx = model.name
                 chat = Chat(
                     client=mcp_run.Client(
                         config=mcp_run.ClientConfig(profile=model.profile)
                     ),
-                    model=m,
+                    model=mx,
                     ignore_tools=self.ignore_tools,
                     system_prompt=TEST_PROMPT,
                     retries=5,
