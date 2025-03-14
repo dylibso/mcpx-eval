@@ -3,8 +3,9 @@ from typing import List
 from datetime import datetime, timedelta
 import json
 import traceback
+import os
 
-from mcpx_py import Chat, mcp_run
+from mcpx_py import Chat, mcp_run, openai_compatible_model
 import pystache
 
 from .models import ScoreModel, Score, Results, Test, Model
@@ -85,11 +86,18 @@ class Judge:
             logger.info(f"Evaluating model {model.slug}")
             tool_calls = 0
             try:
+                if model.provider == "ollama":
+                    m = openai_compatible_model(
+                        os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434") + "/v1",
+                        model.name,
+                    )
+                else:
+                    m = model.name
                 chat = Chat(
                     client=mcp_run.Client(
                         config=mcp_run.ClientConfig(profile=model.profile)
                     ),
-                    model=model.name,
+                    model=m,
                     ignore_tools=self.ignore_tools,
                     system_prompt=TEST_PROMPT,
                     retries=5,
