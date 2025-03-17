@@ -62,3 +62,12 @@ You are a helpful tool calling AI assistant with access to various external tool
 
 Your responses should focus on results rather than asking questions. Only ask the user for clarification if the task itself is unclear or impossible with the tools available.
 """
+
+# OpenAI model identifiers
+OPENAI_MODELS = [
+    "gpt-4o", "o1", "o1-mini", "o3-mini", "o3",
+    "gpt-3.5", "gpt-4", "gpt-4.5"
+]
+
+# Default profile path
+DEFAULT_PROFILE = "~/default"
