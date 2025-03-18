@@ -2,7 +2,7 @@ import sqlite3
 import json
 import pandas as pd
 from datetime import datetime
-from .models import Score, Results, Test
+from .models import Score, Results, Test, ScoreModel
 
 
 class Database:
@@ -170,17 +170,19 @@ class Database:
             Score(
                 model=row["model"],
                 duration=row["duration"],
-                llm_output=row["output"],
-                description=row["description"],
-                accuracy=row["accuracy"],
-                tool_use=row["tool_use"],
-                tool_calls=int(row["tool_calls"]),
-                redundant_tool_calls=int(row["redundant_tool_calls"]),
-                completeness=row["completeness"],
-                quality=row["quality"],
-                hallucination_score=row["hallucination_score"],
-                false_claims=row["false_claims"],
+                score=ScoreModel(
+                    llm_output=row["output"],
+                    description=row["description"],
+                    accuracy=row["accuracy"],
+                    tool_use=row["tool_use"],
+                    completeness=row["completeness"],
+                    quality=row["quality"],
+                    hallucination_score=row["hallucination_score"],
+                    false_claims=row["false_claims"]
+                ),
                 tool_analysis=row["tool_analysis"],
+                redundant_tool_calls=int(row["redundant_tool_calls"]),
+                tool_calls=int(row["tool_calls"])
             )
             for _, row in grouped.iterrows()
         ]
