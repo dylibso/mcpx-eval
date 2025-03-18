@@ -154,8 +154,14 @@ class MockResponse:
 
 class TestJudgeEvaluation(unittest.IsolatedAsyncioTestCase):
     @patch('mcpx_eval.judge.Chat')
-    async def test_evaluate_model_success(self, mock_chat):
+    @patch('mcpx_eval.judge.mcp_run')
+    async def test_evaluate_model_success(self, mock_mcp_run, mock_chat):
         """Test successful model evaluation"""
+        # Setup mock mcp_run.Client
+        mock_client = Mock()
+        mock_mcp_run.Client = Mock(return_value=mock_client)
+        mock_mcp_run.ClientConfig = Mock()
+        
         # Setup mock responses
         mock_chat_instance = Mock()
         model_response_parts = [
@@ -202,8 +208,14 @@ class TestJudgeEvaluation(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["messages"][3]["kind"], "final_result")
 
     @patch('mcpx_eval.judge.Chat')
-    async def test_evaluate_model_failure(self, mock_chat):
+    @patch('mcpx_eval.judge.mcp_run')
+    async def test_evaluate_model_failure(self, mock_mcp_run, mock_chat):
         """Test model evaluation with error"""
+        # Setup mock mcp_run.Client
+        mock_client = Mock()
+        mock_mcp_run.Client = Mock(return_value=mock_client)
+        mock_mcp_run.ClientConfig = Mock()
+        
         mock_chat_instance = Mock()
         
         async def mock_iter(prompt):

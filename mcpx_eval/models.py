@@ -1,4 +1,4 @@
-from mcpx_pydantic_ai import BaseModel, Field
+from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Tuple, Optional
 import pandas as pd
 from dataclasses import dataclass
