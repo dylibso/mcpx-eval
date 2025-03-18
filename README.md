@@ -12,6 +12,14 @@ The [tests/](https://github.com/dylibso/mcpx-eval/tree/main/tests) directory con
 
 ## Installation
 
+
+```bash
+uv tool install mcpx-eval
+```
+
+
+Or from git:
+
 ```bash
 uv tool install git+https://github.com/dylibso/mcpx-eval
 ```
