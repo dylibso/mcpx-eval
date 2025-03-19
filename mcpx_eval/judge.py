@@ -88,7 +88,7 @@ class ToolAnalysis:
 class Judge:
     """Evaluates model performance on given tests."""
 
-    model: str
+    model: Model
     models: List[Model]
     ignore_tools: List[str]
     db: Database
@@ -106,6 +106,7 @@ class Judge:
         self.ignore_tools = ignore_tools or []
         self.db = db or Database()
         self.models = []
+        self.model = Model(name=judge_model)
         if models is not None:
             for model in models:
                 self.add_model(model)
@@ -245,6 +246,7 @@ class Judge:
         scores = []
         total_duration = timedelta(seconds=0)
 
+        model_config = ModelApiConfig.get_model_config(self.model)
         for model in self.models:
             start = datetime.now()
             tool_analysis = ToolAnalysis()
@@ -267,7 +269,7 @@ class Judge:
                 client=mcp_run.Client(
                     config=mcp_run.ClientConfig(profile=model.profile)
                 ),
-                model=model.name,
+                model=model_config,
                 ignore_tools=self.ignore_tools,
                 result_type=ScoreModel,
                 system_prompt=SYSTEM_PROMPT,
