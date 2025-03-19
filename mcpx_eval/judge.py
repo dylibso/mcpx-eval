@@ -26,14 +26,14 @@ class ModelApiConfig:
                 f"{model_name.upper()}_HOST",
                 os.environ.get(
                     "LLAMA_HOST",
-                    os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
+                    os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434"),
                 ),
             )
             return f"{host}/v1" if not host.endswith("/v1") else host
         elif provider == "openai":
             host = os.environ.get(
                 f"{model_name.upper()}_HOST",
-                os.environ.get("OPENAI_HOST", "https://api.openai.com")
+                os.environ.get("OPENAI_HOST", "https://api.openai.com"),
             )
             return f"{host}/v1" if not host.endswith("/v1") else host
         return ""
@@ -69,7 +69,9 @@ class ToolAnalysis:
         tool_pattern = f"{tool_name}:{str(tool_input)}"
 
         # Check for redundancy
-        redundancy_status = "redundant" if tool_pattern in self.seen_tool_patterns else "unique"
+        redundancy_status = (
+            "redundant" if tool_pattern in self.seen_tool_patterns else "unique"
+        )
         if redundancy_status == "redundant":
             self.redundant_tool_calls += 1
         else:
@@ -152,8 +154,8 @@ class Judge:
         tool_analysis: ToolAnalysis,
     ) -> Dict[str, Any]:
         """Evaluate a single model's performance."""
-        result = {"messages": []}
-        
+        result = {"messages": [], "tools-available": []}
+
         try:
             model_config = ModelApiConfig.get_model_config(model)
             chat = Chat(
@@ -165,6 +167,7 @@ class Judge:
                 system_prompt=TEST_PROMPT,
                 retries=5,
             )
+            result["tools-available"] = list(chat.client.tools.keys())
 
             async for node in chat.iter(prompt):
                 if hasattr(node, "model_response"):
@@ -188,7 +191,9 @@ class Judge:
                                     "tool_call_id": part.tool_call_id,
                                 }
                             )
-                            tool_analysis.analyze_message(result["messages"][-1], len(result["messages"]) - 1)
+                            tool_analysis.analyze_message(
+                                result["messages"][-1], len(result["messages"]) - 1
+                            )
 
                 elif hasattr(node, "request"):
                     for part in node.request.parts:
@@ -241,7 +246,7 @@ class Judge:
 
             logger.info(f"Evaluating model {model.slug}")
             result = await self.evaluate_model(model, prompt, tool_analysis)
-            
+
             if result is None:
                 continue
 
@@ -263,7 +268,7 @@ class Judge:
                 system_prompt=SYSTEM_PROMPT,
                 result_retries=10,
             )
-            
+
             res = await agent.send_message(f"""
 <settings>
 Current date and time: {datetime.now().isoformat()}

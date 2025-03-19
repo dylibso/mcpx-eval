@@ -776,7 +776,7 @@ wheels = [
 
 [[package]]
 name = "mcpx-eval"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "." }
 dependencies = [
     { name = "jinja2" },
@@ -818,6 +818,7 @@ dependencies = [
     { name = "psutil" },
     { name = "python-dotenv" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/27/da/6af732e479ee45b8a99a9134854b142540a2c46774c23f59cf64e4a7abb7/mcpx_py-0.4.1.tar.gz", hash = "sha256:699e6ed5f88f6960278d1e3d8cfea9073b0df222c8d2c2b890bed81df2771b47", size = 9887 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2f/f9/eee8880059528e3c6b4f71d6d60dd6ab60934b173f8e55fb47711c75fdaa/mcpx_py-0.4.1-py3-none-any.whl", hash = "sha256:7e9d45de0f4a6ee2939126e8b03ad1a2925325445e35e1930aff14c19805e9b6", size = 8059 },
 ]
