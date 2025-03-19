@@ -267,7 +267,7 @@ class Judge:
             logger.info(f"Analyzing results of {model.slug}")
             agent = Chat(
                 client=mcp_run.Client(
-                    config=mcp_run.ClientConfig(profile=model.profile)
+                    config=mcp_run.ClientConfig(profile=self.profile)
                 ),
                 model=model_config,
                 ignore_tools=self.ignore_tools,
