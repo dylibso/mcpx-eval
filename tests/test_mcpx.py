@@ -157,13 +157,19 @@ class TestJudgeEvaluation(unittest.IsolatedAsyncioTestCase):
     @patch('mcpx_eval.judge.mcp_run')
     async def test_evaluate_model_success(self, mock_mcp_run, mock_chat):
         """Test successful model evaluation"""
-        # Setup mock mcp_run.Client
-        mock_client = Mock()
+        # Setup mock mcp_run.Client with proper tools attribute
+        mock_tools = MagicMock()
+        mock_tools.keys.return_value = ["test_tool"]
+        mock_client = MagicMock()
+        mock_client.tools = mock_tools
         mock_mcp_run.Client = Mock(return_value=mock_client)
         mock_mcp_run.ClientConfig = Mock()
+
+        # Setup mock chat instance
+        mock_chat_instance = MagicMock()
+        mock_chat_instance.client = mock_client
         
-        # Setup mock responses
-        mock_chat_instance = Mock()
+        # Setup response parts
         model_response_parts = [
             MockPart(
                 part_kind="text",

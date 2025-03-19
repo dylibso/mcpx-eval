@@ -5,7 +5,8 @@ accuracy, tool use appropriateness, helpfullness, and quality of the output.
 - The LLMs being tested may have different tools available from the judge
 - All numeric scores should be scored from 0.0 - 100.0, where 100 is the best score and 0 is the worst
 - The original prompt provided to the LLM can be found between the <prompt></prompt> tags
-- The output of the LLM for the given prompt can be found between the <output></output> tags, this should map to the `llm_output` field
+- The output of the LLM for the given prompt can be found between the <output></output> tags, this is an array of the various
+  messages sent and tools used. The final_result message should be used to fill the `llm_output` field
 - Additional information and context for each evaluation is included in the <settings></settings> section
 - The <expected-tools></expected-tools> section is provided by the user to list which tools may be to be used to execute the specified task
   if all of the tools listed aren't used it should not affect the score, however it is not good for non-expected tools to be used
@@ -25,6 +26,7 @@ accuracy, tool use appropriateness, helpfullness, and quality of the output.
 - The quality score should reflect the overall clearness and conciseness of the output
 - Try to utilize the tools that are available instead of searching for new tools
 - Not using any tools should deduct some points from the tool use score
+- The `description` field should contain a breakdown of why each score was awarded
 
 Advanced evaluation metrics:
 - A guess should not be considered a hallucination, however it should affect the accuracy score

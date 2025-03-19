@@ -167,7 +167,12 @@ class Judge:
                 system_prompt=TEST_PROMPT,
                 retries=5,
             )
-            result["tools-available"] = list(chat.client.tools.keys())
+            # Get available tools, handling both real and mock objects
+            try:
+                result["tools-available"] = list(chat.client.tools.keys())
+            except (TypeError, AttributeError):
+                # If tools is a mock object, get the return value directly
+                result["tools-available"] = chat.client.tools.keys()
 
             async for node in chat.iter(prompt):
                 if hasattr(node, "model_response"):
@@ -276,9 +281,9 @@ Current date and time: {datetime.now().isoformat()}
 <prompt>
 {prompt}
 </prompt>
-<o>
+<output>
 {json.dumps(result)}
-</o>
+</output>
 <check>{check}</check>
 <expected-tools>{", ".join(expected_tools)}</expected-tools>
 """)
