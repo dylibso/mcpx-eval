@@ -208,7 +208,7 @@ async def run():
         "--profile",
         "-p",
         default=None,
-        help="Profile to use for all models",
+        help="Profile to use for judge model",
     )
 
     test_parser.add_argument("--prompt", help="Test prompt")
@@ -318,17 +318,8 @@ async def run():
 
         if hasattr(args, "config") and args.config is not None:
             test = Test.load(args.config)
-            if args.profile:
-                test.profile = args.profile
             for model in args.model:
-                if args.profile:
-                    if "/" in model:
-                        a, _ = model.split("/", maxsplit=1)
-                        test.models.append(f"{a}/{args.profile}")
-                    else:
-                        test.models.append(f"{model}/{args.profile}")
-                else:
-                    test.models.append(model)
+                test.models.append(model)
             if args.name is None or args.name == "":
                 if test.name is not None:
                     name = test.name
@@ -362,7 +353,7 @@ async def run():
 
         judge = Judge(
             models=test.models,
-            profile=test.profile,
+            profile=args.profile,
             db=db,
             judge_model=args.judge_model,
             ignore_tools=test.ignore_tools,
