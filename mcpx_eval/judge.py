@@ -264,7 +264,7 @@ class Judge:
             result["duration_in_seconds"] = f"{duration_seconds}s"
             result["number_of_tools_used"] = str(tool_analysis.total_tool_calls)
 
-            logger.info(f"Analyzing results of {model.slug}")
+            logger.info(f"Analyzing results of {model.slug} with profile={self.profile}")
             agent = Chat(
                 client=mcp_run.Client(
                     config=mcp_run.ClientConfig(profile=self.profile)
