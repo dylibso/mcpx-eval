@@ -1,6 +1,6 @@
 [project]
 name = "mcpx-eval"
-version = "0.1.4"
+version = "0.1.5"
 description = "Open ended tool use evaluation framework"
 readme = "README.md"
 requires-python = ">=3.12"
