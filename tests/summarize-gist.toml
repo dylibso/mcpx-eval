@@ -1,0 +1,5 @@
+name = "summarize-gist"
+prompt = "Summarize {{url}} and save it to a private gist"
+check = "A summary of the requested url based on the results of the fetch tool should be saved as a github gist"
+vars = {url="https://dylibso.com"}
+expected-tools = ["fetch", "gh-create-gist"]

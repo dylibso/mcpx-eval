@@ -1,0 +1,5 @@
+name = "summarize-fetch"
+prompt = "Summarize {{url}}"
+check = "A summary of the requested url based on the results of the fetch tool"
+vars = {url="https://example.com"}
+expected-tools = ["fetch"]

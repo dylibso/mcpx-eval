@@ -170,7 +170,7 @@ async def run():
     from argparse import ArgumentParser
 
     parser = ArgumentParser(
-        "mcpx-eval", description="Open-ended LLM tool use evaluator"
+        "mcpx-eval", description="Open-ended LLM tool use evaluator for mcp.run tools"
     )
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
     parser.add_argument("--db", default=None, help="SQLite3 database path")
@@ -360,7 +360,6 @@ async def run():
         )
         judge.db.save_test(test)
 
-        all_results = []
         total_duration = 0
 
         for i in range(iterations):
@@ -370,26 +369,20 @@ async def run():
             # For multiple iterations, pass save=True to ensure each run is saved to DB
             res = await judge.run_test(test, save=not args.no_save)
             total_duration += res.duration
-            logger.info(f"Result: {res.scores}")
+            logger.debug(f"Result: {res.scores}")
             if not args.no_save:
                 logger.info("Results saved to db")
-            all_results.extend(res.scores)
 
             if iterations > 1:
                 logger.info(f"Iteration {i + 1} finished in {res.duration}s")
 
         logger.info(f"{test.name} finished in {total_duration}s total")
 
-        # When multiple iterations are run, only show the last iteration's results
-        # to avoid overwhelming the user with output
-        results_to_print = all_results if iterations == 1 else res.scores
-
         if iterations > 1:
             print(f"\nShowing results from iteration {iterations} of {iterations}.")
-            print(f"All {iterations} iterations have been saved to the database.")
             print(f"Use 'mcpx-eval summary {test.name}' to see aggregated results.\n")
 
-        for result in results_to_print:
+        for result in res.scores:
             if result is None:
                 continue
             print_result(result)
