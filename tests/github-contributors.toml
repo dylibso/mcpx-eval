@@ -1,0 +1,5 @@
+name = "github-contributors"
+prompt = "List the contributors to {{repo}} and any information github provides about them"
+check = "A list of github users using the github tools"
+vars = {repo="extism/extism"}
+expected-tools = ["gh-get-repo-contributors"]

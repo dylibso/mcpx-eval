@@ -168,6 +168,7 @@ class Judge:
                 system_prompt=TEST_PROMPT,
                 retries=5,
             )
+
             # Get available tools, handling both real and mock objects
             try:
                 result["tools-available"] = list(chat.client.tools.keys())
@@ -223,7 +224,7 @@ class Judge:
                                 }
                             )
                 elif hasattr(node, "data"):
-                    logger.info(f"Final result: {node.data.data}")
+                    logger.debug(f"Final result: {node.data.data}")
                     result["messages"].append(
                         {"kind": "final_result", "text": node.data.data}
                     )
@@ -264,7 +265,9 @@ class Judge:
             result["duration_in_seconds"] = f"{duration_seconds}s"
             result["number_of_tools_used"] = str(tool_analysis.total_tool_calls)
 
-            logger.info(f"Analyzing results of {model.slug} with profile={self.profile}")
+            logger.info(
+                f"Analyzing results of {model.slug} with profile={self.profile}"
+            )
             agent = Chat(
                 client=mcp_run.Client(
                     config=mcp_run.ClientConfig(profile=self.profile)

@@ -17,11 +17,16 @@ The [tests/](https://github.com/dylibso/mcpx-eval/tree/main/tests) directory con
 uv tool install mcpx-eval
 ```
 
-
 Or from git:
 
 ```bash
 uv tool install git+https://github.com/dylibso/mcpx-eval
+```
+
+Or using `uvx` without installation:
+
+```bash
+uvx mcpx-eval
 ```
 
 ## Usage
