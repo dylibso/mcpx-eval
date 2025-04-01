@@ -58,6 +58,6 @@ A test file is a TOML file containing the following fields:
 - `prompt` - prompt to test, this is passed to the LLM under test, this can be left blank if `task` is set
 - `check` - prompt for the judge, this is used to determine the quality of the test output 
 - `expected-tools` - list of tool names that might be used
-- `ignore-tools` - optional, list of tools to ignore, they will not be available to the LLM
+- `ignored-tools` - optional, list of tools to ignore, they will not be available to the LLM
 - `import` - optional, includes fields from another test TOML file
 - `vars` - optional, a dict of variables that will be used to format the prompt

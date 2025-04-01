@@ -150,6 +150,7 @@ class Score:
 
 class Results(BaseModel):
     """Collection of scores from multiple model evaluations."""
+
     scores: List[Score] = Field([], description="A list of scores for each model")
     duration: float = Field(0.0, description="Total duration of all tests")
 
@@ -164,6 +165,7 @@ class Results(BaseModel):
 @dataclass
 class Test:
     """Configuration for a model evaluation test."""
+
     name: str
     prompt: str
     check: str
@@ -197,6 +199,21 @@ class Test:
         self.task = task
 
     @staticmethod
+    def from_dict(data: dict) -> "Test":
+        """Parse a dict into a test"""
+        return Test(
+            data.get("name", ""),
+            data.get("prompt", ""),
+            data.get("check", ""),
+            data.get("models", []),
+            data.get("expected-tools", []),
+            ignore_tools=data.get("ignored-tools", data.get("ignore-tools", [])),
+            vars=data.get("vars", {}),
+            profile=data.get("profile"),
+            task=data.get("task"),
+        )
+
+    @staticmethod
     def load(path: str) -> "Test":
         """Load a test configuration from a TOML file."""
         import tomllib
@@ -223,19 +240,14 @@ class Test:
                 t.profile = data.get("profile", t.profile)
                 t.models = data.get("models", t.models)
                 t.expected_tools.extend(data.get("expected-tools", []))
-                t.ignore_tools.extend(data.get("ignore-tools", []))
+                t.ignore_tools.extend(
+                    data.get("ignored-tools", data.get("ignore-tools", []))
+                )
                 t.vars.update(**data.get("vars", {}))
                 t.task = t.task or data.get("task")
             return t
 
-        return Test(
-            data.get("name", path),
-            data.get("prompt", ""),
-            data.get("check", ""),
-            data.get("models", []),
-            data.get("expected-tools", []),
-            ignore_tools=data.get("ignore-tools", []),
-            vars=data.get("vars", {}),
-            profile=data.get("profile"),
-            task=data.get("task"),
-        )
+        if "name" not in data:
+            data["name"] = path
+
+        return Test.from_dict(data)
