@@ -48,12 +48,16 @@ class Model:
     name: str
     profile: str
     provider: str
+    trace: dict | None = None
 
-    def __init__(self, name: str, profile: Optional[str] = None):
+    def __init__(
+        self, name: str, profile: Optional[str] = None, trace: dict | None = None
+    ):
         provider, model_name, prof = parse_model(name)
         self.provider = provider
         self.name = model_name
         self.profile = profile if profile is not None else prof
+        self.trace = trace
 
     @property
     def slug(self) -> str:
@@ -123,6 +127,7 @@ class Score:
     tool_analysis: dict
     redundant_tool_calls: int
     tool_calls: int
+    trace: dict
 
     def __getattribute__(self, name: str) -> Any:
         if name == "score":
@@ -144,6 +149,7 @@ class Score:
             "hallucination_score": self.score.hallucination_score,
             "redundant_tool_calls": self.redundant_tool_calls,
             "false_claims_count": len(self.score.false_claims),
+            "trace": self.trace,
         }
         return pd.DataFrame(record)
 
