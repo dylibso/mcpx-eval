@@ -73,6 +73,14 @@ class Model:
         """Generate the provider/name identifier."""
         return f"{self.provider}/{self.name}"
 
+    @staticmethoc
+    def load_trace(path):
+        """Load trace from disk"""
+        with open(path, "r") as f:
+            data = json.load(f)
+            model = data.pop("model")
+            return Model(model, trace=data)
+
 
 class ScoreModel(BaseModel):
     """Used to score the result of an LLM tool call."""
@@ -152,6 +160,14 @@ class Score:
             "trace": self.trace,
         }
         return pd.DataFrame(record)
+
+    def save_trace(self, path):
+        """Save trace to disk"""
+        trace = self.trace.copy()
+        trace["model"] = self.model
+        with open(path, "w") as f:
+            f.write(json.dumps(trace))
+        
 
 
 class Results(BaseModel):
