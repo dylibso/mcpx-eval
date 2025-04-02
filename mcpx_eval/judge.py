@@ -295,7 +295,6 @@ Current date and time: {datetime.now().isoformat()}
 <check>{check}</check>
 <expected-tools>{", ".join(expected_tools)}</expected-tools>
 """)
-
             scores.append(
                 Score(
                     score=res.data,
