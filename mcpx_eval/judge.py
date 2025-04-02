@@ -253,17 +253,20 @@ class Judge:
             tool_analysis = ToolAnalysis()
 
             logger.info(f"Evaluating model {model.slug}")
-            result = await self.evaluate_model(model, prompt, tool_analysis)
+            if model.trace is not None:
+                result = model.trace
+            else:
+                result = await self.evaluate_model(model, prompt, tool_analysis)
 
-            if result is None:
-                continue
+                if result is None:
+                    continue
 
-            duration = datetime.now() - start
-            duration_seconds = duration.total_seconds()
-            total_duration += duration
+                duration = datetime.now() - start
+                duration_seconds = duration.total_seconds()
+                total_duration += duration
 
-            result["duration_in_seconds"] = f"{duration_seconds}s"
-            result["number_of_tools_used"] = str(tool_analysis.total_tool_calls)
+                result["duration_in_seconds"] = f"{duration_seconds}s"
+                result["number_of_tools_used"] = str(tool_analysis.total_tool_calls)
 
             logger.info(
                 f"Analyzing results of {model.slug} with profile={self.profile}"
@@ -301,6 +304,7 @@ Current date and time: {datetime.now().isoformat()}
                     tool_analysis=tool_analysis.tool_analysis,
                     redundant_tool_calls=tool_analysis.redundant_tool_calls,
                     tool_calls=tool_analysis.total_tool_calls,
+                    trace=result,
                 )
             )
 
