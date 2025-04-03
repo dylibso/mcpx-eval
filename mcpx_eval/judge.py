@@ -15,6 +15,31 @@ from .constants import SYSTEM_PROMPT, TEST_PROMPT
 logger = logging.getLogger(__name__)
 
 
+def load_task_run(
+    client: mcp_run.Client, task: str, task_run_name: str
+) -> mcp_run.TaskRun | None:
+    for run in client.list_task_runs(task):
+        if run.name == task_run_name:
+            return run
+    return None
+
+
+def latest_task_run(client: mcp_run.Client, task: str) -> mcp_run.TaskRun | None:
+    try:
+        return client.list_task_runs(task).__next__()
+    except StopIteration:
+        return None
+
+
+def task_run_to_model(client: mcp_run.Client, run: mcp_run.TaskRun) -> Model:
+    messages = []
+    return Model(
+        name=run._task.provider["settings"]["model"],
+        profile=run._task.profile,
+        trace=messages,
+    )
+
+
 class ModelApiConfig:
     """Helper class to manage model API configurations."""
 
@@ -85,6 +110,22 @@ class ToolAnalysis:
         }
 
 
+def format_judge_prompt(prompt, results, check, expected_tools):
+    return f"""
+    <settings>
+    Current date and time: {datetime.now().isoformat()}
+    </settings>
+    <prompt>
+    {prompt}
+    </prompt>
+    <output>
+    {json.dumps(results)}
+    </output>
+    <check>{check}</check>
+    <expected-tools>{", ".join(expected_tools)}</expected-tools>
+    """
+
+
 class Judge:
     """Evaluates model performance on given tests."""
 
@@ -142,6 +183,7 @@ class Judge:
             pystache.render(test.prompt, test.vars),
             test.check,
             test.expected_tools,
+            test.task,
         )
 
         if save:
@@ -242,31 +284,59 @@ class Judge:
         prompt: str,
         check: str,
         expected_tools: List[str],
+        task: str | None = None,
     ) -> Results:
         """Run evaluation across all models."""
         scores = []
         total_duration = timedelta(seconds=0)
 
         model_config = ModelApiConfig.get_model_config(self.model)
+        if len(self.models) == 0 and task is not None:
+            client = mcp_run.Client(config=mcp_run.ClientConfig(profile=self.profile))
+            run = latest_task_run(client, task)
+            agent = Chat(
+                client=client,
+                model=model_config,
+                ignore_tools=self.ignore_tools,
+                result_type=ScoreModel,
+                system_prompt=SYSTEM_PROMPT,
+                result_retries=10,
+            )
+
+            res = await agent.send_message(
+                format_judge_prompt(prompt, run.results_list, check, expected_tools)
+            )
+
+            # TODO: add tool analysis
+            duration = (run.modified_at - run.created_at).total_seconds()
+            scores.append(
+                Score(
+                    score=res.data,
+                    model=run._task.provider["settings"]["model"],
+                    duration=duration,
+                    tool_analysis={},  # tool_analysis.tool_analysis,
+                    redundant_tool_calls=0,  # tool_analysis.redundant_tool_calls,
+                    tool_calls=0,  # tool_analysis.total_tool_calls,
+                    trace=run.results_list,
+                )
+            )
+
         for model in self.models:
             start = datetime.now()
             tool_analysis = ToolAnalysis()
 
             logger.info(f"Evaluating model {model.slug}")
-            if model.trace is not None:
-                result = model.trace
-            else:
-                result = await self.evaluate_model(model, prompt, tool_analysis)
+            result = await self.evaluate_model(model, prompt, tool_analysis)
 
-                if result is None:
-                    continue
+            if result is None:
+                continue
 
-                duration = datetime.now() - start
-                duration_seconds = duration.total_seconds()
-                total_duration += duration
+            duration = datetime.now() - start
+            duration_seconds = duration.total_seconds()
+            total_duration += duration
 
-                result["duration_in_seconds"] = f"{duration_seconds}s"
-                result["number_of_tools_used"] = str(tool_analysis.total_tool_calls)
+            result["duration_in_seconds"] = f"{duration_seconds}s"
+            result["number_of_tools_used"] = str(tool_analysis.total_tool_calls)
 
             logger.info(
                 f"Analyzing results of {model.slug} with profile={self.profile}"
@@ -282,19 +352,9 @@ class Judge:
                 result_retries=10,
             )
 
-            res = await agent.send_message(f"""
-<settings>
-Current date and time: {datetime.now().isoformat()}
-</settings>
-<prompt>
-{prompt}
-</prompt>
-<output>
-{json.dumps(result)}
-</output>
-<check>{check}</check>
-<expected-tools>{", ".join(expected_tools)}</expected-tools>
-""")
+            res = await agent.send_message(
+                format_judge_prompt(prompt, results, check, expected_tools)
+            )
             scores.append(
                 Score(
                     score=res.data,
