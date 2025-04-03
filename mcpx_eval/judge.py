@@ -24,11 +24,12 @@ def load_task_run(
     return None
 
 
-def latest_task_run(client: mcp_run.Client, task: str) -> mcp_run.TaskRun | None:
-    try:
-        return client.list_task_runs(task).__next__()
-    except StopIteration:
-        return None
+def task_run_index(
+    client: mcp_run.Client, task: str, index: int = -1
+) -> mcp_run.TaskRun | None:
+    a = list(client.list_task_runs(task))
+    a.reverse()
+    return a[index]
 
 
 def task_run_to_model(client: mcp_run.Client, run: mcp_run.TaskRun) -> Model:
@@ -184,6 +185,7 @@ class Judge:
             test.check,
             test.expected_tools,
             test.task,
+            test.task_run,
         )
 
         if save:
@@ -295,10 +297,14 @@ class Judge:
         if task is not None:
             # TODO: make it possible to select which task run to use
             client = mcp_run.Client(config=mcp_run.ClientConfig(profile=self.profile))
-            if task_run is not None:
+            try:
+                task_run = int(task_run or -1)
+            except ValueError:
+                pass
+            if task_run is not None and not isinstance(task_run, int):
                 run = load_task_run(client, task, task_run)
             else:
-                run = latest_task_run(client, task)
+                run = task_run_index(client, task, index=task_run)
             if run is not None:
                 logger.info(f"Analyzing task run {run.name}")
                 prompt = run.results_list[0]["exchange"]["content"]
