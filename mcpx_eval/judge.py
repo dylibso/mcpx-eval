@@ -32,15 +32,6 @@ def task_run_index(
     return a[index]
 
 
-def task_run_to_model(client: mcp_run.Client, run: mcp_run.TaskRun) -> Model:
-    messages = []
-    return Model(
-        name=run._task.provider["settings"]["model"],
-        profile=run._task.profile,
-        trace=messages,
-    )
-
-
 class ModelApiConfig:
     """Helper class to manage model API configurations."""
 
@@ -112,6 +103,8 @@ class ToolAnalysis:
 
 
 def format_judge_prompt(prompt, results, check, expected_tools):
+    if check is None or check == "":
+        check = "Make sure the output matches the requirments of the prompt"
     return f"""
     <settings>
     Current date and time: {datetime.now().isoformat()}
@@ -135,6 +128,7 @@ class Judge:
     ignore_tools: List[str]
     db: Database
     profile: Optional[str]
+    retries: int
 
     def __init__(
         self,
@@ -143,7 +137,9 @@ class Judge:
         profile: Optional[str] = None,
         judge_model: str = "claude-3-5-sonnet-latest",
         ignore_tools: Optional[List[str]] = None,
+        retries: Optional[int] = None,
     ):
+        self.retries = retries or 10
         self.profile = profile or mcp_run.ProfileSlug("~", "default")
         self.ignore_tools = ignore_tools or []
         self.db = db or Database()
@@ -295,7 +291,6 @@ class Judge:
 
         model_config = ModelApiConfig.get_model_config(self.model)
         if task is not None:
-            # TODO: make it possible to select which task run to use
             client = mcp_run.Client(config=mcp_run.ClientConfig(profile=self.profile))
             try:
                 task_run = int(task_run or -1)
@@ -314,7 +309,7 @@ class Judge:
                     ignore_tools=self.ignore_tools,
                     result_type=ScoreModel,
                     system_prompt=SYSTEM_PROMPT,
-                    result_retries=10,
+                    result_retries=self.retries,
                 )
 
                 res = await agent.send_message(
@@ -339,7 +334,7 @@ class Judge:
                 scores.append(
                     Score(
                         score=res.data,
-                        model=run._task.provider["settings"]["model"],
+                        model=run._task.provider["settings"]["model"] + "-" + run.name,
                         duration=duration,
                         tool_analysis=tool_analysis.tool_analysis,
                         redundant_tool_calls=tool_analysis.redundant_tool_calls,
@@ -376,7 +371,7 @@ class Judge:
                 ignore_tools=self.ignore_tools,
                 result_type=ScoreModel,
                 system_prompt=SYSTEM_PROMPT,
-                result_retries=10,
+                result_retries=self.retries,
             )
 
             res = await agent.send_message(
