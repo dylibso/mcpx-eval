@@ -285,6 +285,7 @@ class Judge:
         check: str,
         expected_tools: List[str],
         task: str | None = None,
+        task_run: str | None = None,
     ) -> Results:
         """Run evaluation across all models."""
         scores = []
@@ -292,8 +293,12 @@ class Judge:
 
         model_config = ModelApiConfig.get_model_config(self.model)
         if task is not None:
+            # TODO: make it possible to select which task run to use
             client = mcp_run.Client(config=mcp_run.ClientConfig(profile=self.profile))
-            run = latest_task_run(client, task)
+            if task_run is not None:
+                run = load_task_run(client, task, task_run)
+            else:
+                run = latest_task_run(client, task)
             if run is not None:
                 logger.info(f"Analyzing task run {run.name}")
                 prompt = run.results_list[0]["exchange"]["content"]
