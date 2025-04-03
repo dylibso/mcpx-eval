@@ -233,6 +233,11 @@ async def run():
         help="Name of task from mcp.run to get prompt from",
     )
     test_parser.add_argument(
+        "--task-run",
+        default=None,
+        help="Name of a specific task run",
+    )
+    test_parser.add_argument(
         "--var",
         default=[],
         help="Template variable",
@@ -330,6 +335,7 @@ async def run():
             test.prompt = args.prompt or test.prompt
             test.check = args.check or test.check
             test.name = args.name or test.name
+            test.task_run = args.task_run or test.task_run
         else:
             test = Test(
                 name=name,
@@ -341,6 +347,7 @@ async def run():
                 ignore_tools=args.ignore_tool,
                 vars=vars,
                 task=args.task,
+                task_run=args.task_run,
             )
 
         iterations = args.iter

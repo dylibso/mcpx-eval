@@ -198,6 +198,7 @@ class Test:
     profile: Optional[str]
     vars: Dict[str, Any]
     task: Optional[str]
+    task_run: Optional[str]
 
     def __init__(
         self,
@@ -210,6 +211,7 @@ class Test:
         profile: Optional[str] = None,
         vars: Optional[Dict[str, Any]] = None,
         task: Optional[str] = None,
+        task_run: Optional[str] = None,
     ):
         self.name = name
         self.prompt = prompt
@@ -220,6 +222,7 @@ class Test:
         self.ignore_tools = ignore_tools or []
         self.vars = vars or {}
         self.task = task
+        self.task_run = task_run
 
     @staticmethod
     def from_dict(data: dict) -> "Test":
@@ -234,6 +237,7 @@ class Test:
             vars=data.get("vars", {}),
             profile=data.get("profile"),
             task=data.get("task"),
+            task_run=data.get("task_run"),
         )
 
     @staticmethod
@@ -268,6 +272,7 @@ class Test:
                 )
                 t.vars.update(**data.get("vars", {}))
                 t.task = t.task or data.get("task")
+                t.task_run = t.task_run or data.get("task_run")
             return t
 
         if "name" not in data:
