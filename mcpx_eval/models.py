@@ -137,7 +137,7 @@ class Score:
     tool_analysis: dict
     redundant_tool_calls: int
     tool_calls: int
-    trace: dict
+    trace: dict | None = None
 
     def __getattribute__(self, name: str) -> Any:
         if name == "score":
