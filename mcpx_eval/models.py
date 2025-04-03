@@ -204,9 +204,9 @@ class Test:
         self,
         name: str,
         prompt: str,
-        check: str,
-        models: List[str],
-        expected_tools: List[str],
+        check: str = "",
+        models: List[str] | None = None,
+        expected_tools: List[str] | None = None,
         ignore_tools: Optional[List[str]] = None,
         profile: Optional[str] = None,
         vars: Optional[Dict[str, Any]] = None,
@@ -216,8 +216,8 @@ class Test:
         self.name = name
         self.prompt = prompt
         self.check = check
-        self.models = models
-        self.expected_tools = expected_tools
+        self.models = models or []
+        self.expected_tools = expected_tools or []
         self.profile = profile
         self.ignore_tools = ignore_tools or []
         self.vars = vars or {}
