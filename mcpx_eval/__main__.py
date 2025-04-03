@@ -345,7 +345,7 @@ async def run():
 
         iterations = args.iter
         logger.info(
-            f"Running {test.name}: {', '.join(test.models)} ({iterations} iteration{'s' if iterations > 1 else ''})"
+            f"Running {test.name}: task={test.task}, models={', '.join(test.models)} ({iterations} iteration{'s' if iterations > 1 else ''})"
         )
         db = None
         if args.db is not None:

@@ -4,6 +4,8 @@ import pandas as pd
 from dataclasses import dataclass
 from .constants import OPENAI_MODELS, DEFAULT_PROFILE
 
+import json
+
 
 def normalize_profile(profile: str) -> str:
     """Normalize a profile path to ensure it has the proper format."""
@@ -73,7 +75,7 @@ class Model:
         """Generate the provider/name identifier."""
         return f"{self.provider}/{self.name}"
 
-    @staticmethoc
+    @staticmethod
     def load_trace(path):
         """Load trace from disk"""
         with open(path, "r") as f:
@@ -167,7 +169,6 @@ class Score:
         trace["model"] = self.model
         with open(path, "w") as f:
             f.write(json.dumps(trace))
-        
 
 
 class Results(BaseModel):
