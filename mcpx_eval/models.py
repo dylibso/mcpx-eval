@@ -237,7 +237,7 @@ class Test:
             vars=data.get("vars", {}),
             profile=data.get("profile"),
             task=data.get("task"),
-            task_run=data.get("task_run"),
+            task_run=data.get("task-run"),
         )
 
     @staticmethod
@@ -272,7 +272,7 @@ class Test:
                 )
                 t.vars.update(**data.get("vars", {}))
                 t.task = t.task or data.get("task")
-                t.task_run = t.task_run or data.get("task_run")
+                t.task_run = t.task_run or data.get("task-run")
             return t
 
         if "name" not in data:
