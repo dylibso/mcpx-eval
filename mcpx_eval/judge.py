@@ -291,49 +291,51 @@ class Judge:
         total_duration = timedelta(seconds=0)
 
         model_config = ModelApiConfig.get_model_config(self.model)
-        if len(self.models) == 0 and task is not None:
+        if task is not None:
             client = mcp_run.Client(config=mcp_run.ClientConfig(profile=self.profile))
             run = latest_task_run(client, task)
-            agent = Chat(
-                client=client,
-                model=model_config,
-                ignore_tools=self.ignore_tools,
-                result_type=ScoreModel,
-                system_prompt=SYSTEM_PROMPT,
-                result_retries=10,
-            )
-
-            res = await agent.send_message(
-                format_judge_prompt(prompt, run.results_list, check, expected_tools)
-            )
-
-            # TODO: add tool analysis
-            tool_analysis = ToolAnalysis()
-
-            for i, event in enumerate(run.results_list):
-                if event["msg"] == "call tool request":
-                    tool_analysis.analyze_message(
-                        {
-                            "tool": {
-                                "name": event["params"]["name"],
-                                "input": event["params"]["arguments"],
-                            }
-                        },
-                        i,
-                    )
-
-            duration = (run.modified_at - run.created_at).total_seconds()
-            scores.append(
-                Score(
-                    score=res.data,
-                    model=run._task.provider["settings"]["model"],
-                    duration=duration,
-                    tool_analysis=tool_analysis.tool_analysis,
-                    redundant_tool_calls=tool_analysis.redundant_tool_calls,
-                    tool_calls=tool_analysis.total_tool_calls,
-                    trace=run.results_list,
+            if run is not None:
+                logger.info(f"Analyzing task run {run.name}")
+                prompt = run.results_list[0]["exchange"]["content"]
+                agent = Chat(
+                    client=client,
+                    model=model_config,
+                    ignore_tools=self.ignore_tools,
+                    result_type=ScoreModel,
+                    system_prompt=SYSTEM_PROMPT,
+                    result_retries=10,
                 )
-            )
+
+                res = await agent.send_message(
+                    format_judge_prompt(prompt, run.results_list, check, expected_tools)
+                )
+
+                tool_analysis = ToolAnalysis()
+
+                for i, event in enumerate(run.results_list):
+                    if event["msg"] == "call tool request":
+                        tool_analysis.analyze_message(
+                            {
+                                "tool": {
+                                    "name": event["params"]["name"],
+                                    "input": event["params"]["arguments"],
+                                }
+                            },
+                            i,
+                        )
+
+                duration = (run.modified_at - run.created_at).total_seconds()
+                scores.append(
+                    Score(
+                        score=res.data,
+                        model=run._task.provider["settings"]["model"],
+                        duration=duration,
+                        tool_analysis=tool_analysis.tool_analysis,
+                        redundant_tool_calls=tool_analysis.redundant_tool_calls,
+                        tool_calls=tool_analysis.total_tool_calls,
+                        trace=run.results_list,
+                    )
+                )
 
         for model in self.models:
             start = datetime.now()
