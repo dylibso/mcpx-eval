@@ -308,15 +308,29 @@ class Judge:
             )
 
             # TODO: add tool analysis
+            tool_analysis = ToolAnalysis()
+
+            for i, event in enumerate(run.results_list):
+                if event["msg"] == "call tool request":
+                    tool_analysis.analyze_message(
+                        {
+                            "tool": {
+                                "name": event["params"]["name"],
+                                "input": event["params"]["arguments"],
+                            }
+                        },
+                        i,
+                    )
+
             duration = (run.modified_at - run.created_at).total_seconds()
             scores.append(
                 Score(
                     score=res.data,
                     model=run._task.provider["settings"]["model"],
                     duration=duration,
-                    tool_analysis={},  # tool_analysis.tool_analysis,
-                    redundant_tool_calls=0,  # tool_analysis.redundant_tool_calls,
-                    tool_calls=0,  # tool_analysis.total_tool_calls,
+                    tool_analysis=tool_analysis.tool_analysis,
+                    redundant_tool_calls=tool_analysis.redundant_tool_calls,
+                    tool_calls=tool_analysis.total_tool_calls,
                     trace=run.results_list,
                 )
             )
@@ -353,7 +367,7 @@ class Judge:
             )
 
             res = await agent.send_message(
-                format_judge_prompt(prompt, results, check, expected_tools)
+                format_judge_prompt(prompt, result, check, expected_tools)
             )
             scores.append(
                 Score(
