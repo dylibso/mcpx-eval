@@ -277,6 +277,54 @@ class Judge:
 
         return result
 
+    async def _evaluate_task_run(
+        self,
+        client: mcp_run.Client,
+        run: mcp_run.TaskRun,
+        check: str,
+        expected_tools: List[str],
+        model_config: ModelApiConfig,
+    ) -> Score:
+        logger.info(f"Analyzing task run {run.name}")
+        prompt = run.results_list[0]["exchange"]["content"]
+        agent = Chat(
+            client=client,
+            model=model_config,
+            ignore_tools=self.ignore_tools,
+            result_type=ScoreModel,
+            system_prompt=SYSTEM_PROMPT,
+            result_retries=self.retries,
+        )
+
+        res = await agent.send_message(
+            format_judge_prompt(prompt, run.results_list, check, expected_tools)
+        )
+
+        tool_analysis = ToolAnalysis()
+
+        for i, event in enumerate(run.results_list):
+            if event["msg"] == "call tool request":
+                tool_analysis.analyze_message(
+                    {
+                        "tool": {
+                            "name": event["params"]["name"],
+                            "input": event["params"]["arguments"],
+                        }
+                    },
+                    i,
+                )
+
+        duration = (run.modified_at - run.created_at).total_seconds()
+        return Score(
+            score=res.data,
+            model=run._task.provider["settings"]["model"] + "-" + run.name,
+            duration=duration,
+            tool_analysis=tool_analysis.tool_analysis,
+            redundant_tool_calls=tool_analysis.redundant_tool_calls,
+            tool_calls=tool_analysis.total_tool_calls,
+            trace=run.results_list,
+        )
+
     async def run(
         self,
         prompt: str,
@@ -296,52 +344,26 @@ class Judge:
                 task_run = int(task_run or -1)
             except ValueError:
                 pass
-            if task_run is not None and not isinstance(task_run, int):
-                run = load_task_run(client, task, task_run)
-            else:
-                run = task_run_index(client, task, index=task_run)
-            if run is not None:
-                logger.info(f"Analyzing task run {run.name}")
-                prompt = run.results_list[0]["exchange"]["content"]
-                agent = Chat(
-                    client=client,
-                    model=model_config,
-                    ignore_tools=self.ignore_tools,
-                    result_type=ScoreModel,
-                    system_prompt=SYSTEM_PROMPT,
-                    result_retries=self.retries,
-                )
-
-                res = await agent.send_message(
-                    format_judge_prompt(prompt, run.results_list, check, expected_tools)
-                )
-
-                tool_analysis = ToolAnalysis()
-
-                for i, event in enumerate(run.results_list):
-                    if event["msg"] == "call tool request":
-                        tool_analysis.analyze_message(
-                            {
-                                "tool": {
-                                    "name": event["params"]["name"],
-                                    "input": event["params"]["arguments"],
-                                }
-                            },
-                            i,
+            if task_run == "all":
+                for run in client.list_task_runs(task):
+                    scores.append(
+                        await self._evaluate_task_run(
+                            client, run, check, expected_tools, model_config
                         )
-
-                duration = (run.modified_at - run.created_at).total_seconds()
-                scores.append(
-                    Score(
-                        score=res.data,
-                        model=run._task.provider["settings"]["model"] + "-" + run.name,
-                        duration=duration,
-                        tool_analysis=tool_analysis.tool_analysis,
-                        redundant_tool_calls=tool_analysis.redundant_tool_calls,
-                        tool_calls=tool_analysis.total_tool_calls,
-                        trace=run.results_list,
                     )
-                )
+            else:
+                if isinstance(task_run, int):
+                    run = task_run_index(client, task, index=task_run)
+                else:
+                    run = load_task_run(client, task, task_run)
+                if run is not None:
+                    scores.append(
+                        await self._evaluate_task_run(
+                            client, run, check, expected_tools, model_config
+                        )
+                    )
+                else:
+                    logger.error(f"Unable to load {task_run} for task {task}")
 
         for model in self.models:
             start = datetime.now()
