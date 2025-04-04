@@ -67,8 +67,14 @@ Your responses should focus on results rather than asking questions. Only ask th
 
 # OpenAI model identifiers
 OPENAI_MODELS = [
-    "gpt-4o", "o1", "o1-mini", "o3-mini", "o3",
-    "gpt-3.5", "gpt-4", "gpt-4.5"
+    "gpt-4o",
+    "o1",
+    "o1-mini",
+    "o3-mini",
+    "o3",
+    "gpt-3.5",
+    "gpt-4",
+    "gpt-4.5",
 ]
 
 # Default profile path

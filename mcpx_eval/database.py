@@ -63,6 +63,7 @@ class Database:
                     "tool_use": score.tool_use,
                     "tool_calls": score.tool_calls,
                     "redundant_tool_calls": score.redundant_tool_calls,
+                    "failed_tool_calls": score.failed_tool_calls,
                     "completeness": score.completeness,
                     "quality": score.quality,
                     "hallucination_score": score.hallucination_score,
@@ -101,6 +102,7 @@ class Database:
                 "tool_use": score.tool_use,
                 "tool_calls": score.tool_calls,
                 "redundant_tool_calls": score.redundant_tool_calls,
+                "failed_tool_calls": score.failed_tool_calls,
                 "completeness": score.completeness,
                 "quality": score.quality,
                 "hallucination_score": score.hallucination_score,
@@ -178,11 +180,11 @@ class Database:
                     completeness=row["completeness"],
                     quality=row["quality"],
                     hallucination_score=row["hallucination_score"],
-                    false_claims=row["false_claims"]
+                    false_claims=row["false_claims"],
                 ),
                 tool_analysis=row["tool_analysis"],
                 redundant_tool_calls=int(row["redundant_tool_calls"]),
-                tool_calls=int(row["tool_calls"])
+                tool_calls=int(row["tool_calls"]),
             )
             for _, row in grouped.iterrows()
         ]
