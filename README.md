@@ -29,6 +29,37 @@ Or using `uvx` without installation:
 uvx mcpx-eval
 ```
 
+## mcp.run Setup
+
+You will need to get an mcp.run session ID by running:
+
+```bash
+npx --yes -p @dylibso/mcpx gen-session --write
+```
+
+This will generate a new session and write the session ID to a configuration file that can be used
+by `mcpx-py`.
+ 
+If you need to store the session ID in  an environment variable you can run `gen-session`
+without the `--write` flag:
+
+```bash
+npx --yes -p @dylibso/mcpx gen-session
+```
+
+which should output something like:
+
+```
+Login successful!
+Session: kabA7w6qH58H7kKOQ5su4v3bX_CeFn4k.Y4l/s/9dQwkjv9r8t/xZFjsn2fkLzf+tkve89P1vKhQ
+```
+
+Then set the `MPC_RUN_SESSION_ID` environment variable:
+
+```
+$ export MCP_RUN_SESSION_ID=kabA7w6qH58H7kKOQ5su4v3bX_CeFn4k.Y4l/s/9dQwkjv9r8t/xZFjsn2fkLzf+tkve89P1vKhQ
+```
+
 ## Usage
 
 Run the `my-test` test for 10 iterations:
