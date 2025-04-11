@@ -38,7 +38,7 @@ npx --yes -p @dylibso/mcpx gen-session --write
 ```
 
 This will generate a new session and write the session ID to a configuration file that can be used
-by `mcpx-py`.
+by `mcpx-eval`.
  
 If you need to store the session ID in  an environment variable you can run `gen-session`
 without the `--write` flag:
