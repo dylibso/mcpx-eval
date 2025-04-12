@@ -54,7 +54,7 @@ Login successful!
 Session: kabA7w6qH58H7kKOQ5su4v3bX_CeFn4k.Y4l/s/9dQwkjv9r8t/xZFjsn2fkLzf+tkve89P1vKhQ
 ```
 
-Then set the `MPC_RUN_SESSION_ID` environment variable:
+Then set the `MCP_RUN_SESSION_ID` environment variable:
 
 ```
 $ export MCP_RUN_SESSION_ID=kabA7w6qH58H7kKOQ5su4v3bX_CeFn4k.Y4l/s/9dQwkjv9r8t/xZFjsn2fkLzf+tkve89P1vKhQ
