@@ -15,13 +15,14 @@ from .constants import SYSTEM_PROMPT, TEST_PROMPT
 logger = logging.getLogger(__name__)
 
 
-def load_task_run(
-    client: mcp_run.Client, task: str, task_run_name: str
-) -> mcp_run.TaskRun | None:
-    for run in client.list_task_runs(task):
-        if run.name == task_run_name:
-            return run
-    return None
+def is_int(x):
+    if x is None:
+        return False
+    try:
+        int(x)
+        return True
+    except ValueError:
+        return False
 
 
 def task_run_index(
@@ -335,6 +336,7 @@ class Judge:
         expected_tools: List[str],
         task: str | None = None,
         task_run: str | None = None,
+        vars: dict | None = None,
     ) -> Results:
         """Run evaluation across all models."""
         scores = []
@@ -350,15 +352,36 @@ class Judge:
                             client, run, check, expected_tools, model_config
                         )
                     )
-            else:
-                try:
-                    task_run = int(task_run or -1)
-                except ValueError:
-                    pass
-                if isinstance(task_run, int):
-                    run = task_run_index(client, task, index=task_run)
+            elif is_int(task_run) or task_run == "latest":
+                if task_run == "latest":
+                    task_run = -1
+                task_run = int(task_run or -1)
+                run = task_run_index(client, task, index=task_run)
+                if run is not None:
+                    scores.append(
+                        await self._evaluate_task_run(
+                            client, run, check, expected_tools, model_config
+                        )
+                    )
                 else:
-                    run = load_task_run(client, task, task_run)
+                    logger.error(f"Unable to load {task_run} for task {task}")
+            elif task_run is not None and task_run != "new":
+                found = False
+                for run in client.list_task_runs(task):
+                    if run.name == task_run:
+                        scores.append(
+                            await self._evaluate_task_run(
+                                client, run, check, expected_tools, model_config
+                            )
+                        )
+                        found = True
+                if not found:
+                    logger.error(f"Unable to load {task_run} for task {task}")
+            elif len(self.models) == 0:
+                logger.info("No task run specified, this will execute a new task run")
+                run = client.tasks[task].run(vars or {})
+                run.wait()
+                run = task_run_index(client, task, index=-1)
                 if run is not None:
                     scores.append(
                         await self._evaluate_task_run(
