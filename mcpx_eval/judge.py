@@ -29,7 +29,10 @@ def task_run_index(
 ) -> mcp_run.TaskRun | None:
     a = list(client.list_task_runs(task))
     a.reverse()
-    return a[index]
+    try:
+        return a[index]
+    except IndexError:
+        return None
 
 
 class ModelApiConfig:
