@@ -345,7 +345,7 @@ class Judge:
         model_config = ModelApiConfig.get_model_config(self.model)
         if task is not None:
             client = mcp_run.Client(config=mcp_run.ClientConfig(profile=self.profile))
-            if task_run == "all":
+            if task_run.lower() == "all":
                 for run in client.list_task_runs(task):
                     scores.append(
                         await self._evaluate_task_run(
@@ -353,7 +353,7 @@ class Judge:
                         )
                     )
             elif is_int(task_run) or task_run == "latest":
-                if task_run == "latest":
+                if task_run.lower() == "latest":
                     task_run = -1
                 task_run = int(task_run or -1)
                 run = task_run_index(client, task, index=task_run)
@@ -365,7 +365,7 @@ class Judge:
                     )
                 else:
                     logger.error(f"Unable to load {task_run} for task {task}")
-            elif task_run is not None and task_run != "new":
+            elif task_run is not None and task_run.lower() != "new":
                 found = False
                 for run in client.list_task_runs(task):
                     if run.name == task_run:

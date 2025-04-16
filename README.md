@@ -68,16 +68,22 @@ Run an eval comparing all mcp.task runs for `my-task`:
 mcpx-eval test --task my-task --task-run all
 ```
 
+Only evaluate the latest task run:
+
+```bash
+mcpx-eval test --task my-task --task-run latest
+```
+
+Or trigger a new task run:
+
+```bash
+mcpx-eval test --task my-task --task-run new
+```
+
 Run an mcp.run task locally with a different set of models:
 
 ```bash
 mcpx-eval test --model .. --model .. --task my-task --iter 10
-```
-
-Run the `my-test.toml` eval for 10 iterations:
-
-```bash
-mcpx-eval test --model ... --model ... --config my-test.toml --iter 10
 ```
 
 Generate an HTML scoreboard for all evals:
@@ -92,7 +98,7 @@ A test file is a TOML file containing the following fields:
 
 - `name` - name of the test
 - `task` - optional, the name of the mcp.run task to use
-- `task-run` - optional, the name or index of the task run to analyze
+- `task-run` - optional, one of `latest`, `new`, `all` or the name/index of the task run to analyze
 - `prompt` - prompt to test, this is passed to the LLM under test, this can be left blank if `task` is set
 - `check` - prompt for the judge, this is used to determine the quality of the test output 
 - `expected-tools` - list of tool names that might be used
