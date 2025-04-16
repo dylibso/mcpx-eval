@@ -4,6 +4,8 @@ import pandas as pd
 from dataclasses import dataclass
 from .constants import OPENAI_MODELS, DEFAULT_PROFILE
 
+import json
+
 
 def normalize_profile(profile: str) -> str:
     """Normalize a profile path to ensure it has the proper format."""
@@ -48,12 +50,16 @@ class Model:
     name: str
     profile: str
     provider: str
+    trace: dict | None = None
 
-    def __init__(self, name: str, profile: Optional[str] = None):
+    def __init__(
+        self, name: str, profile: Optional[str] = None, trace: dict | None = None
+    ):
         provider, model_name, prof = parse_model(name)
         self.provider = provider
         self.name = model_name
         self.profile = profile if profile is not None else prof
+        self.trace = trace
 
     @property
     def slug(self) -> str:
@@ -68,6 +74,14 @@ class Model:
     def provider_and_name(self) -> str:
         """Generate the provider/name identifier."""
         return f"{self.provider}/{self.name}"
+
+    @staticmethod
+    def load_trace(path):
+        """Load trace from disk"""
+        with open(path, "r") as f:
+            data = json.load(f)
+            model = data.pop("model")
+            return Model(model, trace=data)
 
 
 class ScoreModel(BaseModel):
@@ -123,6 +137,7 @@ class Score:
     tool_analysis: dict
     redundant_tool_calls: int
     tool_calls: int
+    trace: dict | None = None
 
     def __getattribute__(self, name: str) -> Any:
         if name == "score":
@@ -144,8 +159,16 @@ class Score:
             "hallucination_score": self.score.hallucination_score,
             "redundant_tool_calls": self.redundant_tool_calls,
             "false_claims_count": len(self.score.false_claims),
+            "trace": self.trace,
         }
         return pd.DataFrame(record)
+
+    def save_trace(self, path):
+        """Save trace to disk"""
+        trace = self.trace.copy()
+        trace["model"] = self.model
+        with open(path, "w") as f:
+            f.write(json.dumps(trace))
 
 
 class Results(BaseModel):
@@ -175,28 +198,31 @@ class Test:
     profile: Optional[str]
     vars: Dict[str, Any]
     task: Optional[str]
+    task_run: Optional[str]
 
     def __init__(
         self,
         name: str,
         prompt: str,
-        check: str,
-        models: List[str],
-        expected_tools: List[str],
+        check: str = "",
+        models: List[str] | None = None,
+        expected_tools: List[str] | None = None,
         ignore_tools: Optional[List[str]] = None,
         profile: Optional[str] = None,
         vars: Optional[Dict[str, Any]] = None,
         task: Optional[str] = None,
+        task_run: Optional[str] = None,
     ):
         self.name = name
         self.prompt = prompt
         self.check = check
-        self.models = models
-        self.expected_tools = expected_tools
+        self.models = models or []
+        self.expected_tools = expected_tools or []
         self.profile = profile
         self.ignore_tools = ignore_tools or []
         self.vars = vars or {}
         self.task = task
+        self.task_run = task_run
 
     @staticmethod
     def from_dict(data: dict) -> "Test":
@@ -211,6 +237,7 @@ class Test:
             vars=data.get("vars", {}),
             profile=data.get("profile"),
             task=data.get("task"),
+            task_run=data.get("task-run"),
         )
 
     @staticmethod
@@ -245,6 +272,7 @@ class Test:
                 )
                 t.vars.update(**data.get("vars", {}))
                 t.task = t.task or data.get("task")
+                t.task_run = t.task_run or data.get("task-run")
             return t
 
         if "name" not in data:

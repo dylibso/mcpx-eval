@@ -15,6 +15,26 @@ from .constants import SYSTEM_PROMPT, TEST_PROMPT
 logger = logging.getLogger(__name__)
 
 
+def load_task_run(
+    client: mcp_run.Client, task: str, task_run_name: str
+) -> mcp_run.TaskRun | None:
+    for run in client.list_task_runs(task):
+        if run.name == task_run_name:
+            return run
+    return None
+
+
+def task_run_index(
+    client: mcp_run.Client, task: str, index: int = -1
+) -> mcp_run.TaskRun | None:
+    a = list(client.list_task_runs(task))
+    a.reverse()
+    try:
+        return a[index]
+    except IndexError:
+        return None
+
+
 class ModelApiConfig:
     """Helper class to manage model API configurations."""
 
@@ -85,6 +105,24 @@ class ToolAnalysis:
         }
 
 
+def format_judge_prompt(prompt, results, check, expected_tools):
+    if check is None or check == "":
+        check = "Make sure the output matches the requirments of the prompt"
+    return f"""
+    <settings>
+    Current date and time: {datetime.now().isoformat()}
+    </settings>
+    <prompt>
+    {prompt}
+    </prompt>
+    <output>
+    {json.dumps(results)}
+    </output>
+    <check>{check}</check>
+    <expected-tools>{", ".join(expected_tools)}</expected-tools>
+    """
+
+
 class Judge:
     """Evaluates model performance on given tests."""
 
@@ -93,6 +131,7 @@ class Judge:
     ignore_tools: List[str]
     db: Database
     profile: Optional[str]
+    retries: int
 
     def __init__(
         self,
@@ -101,7 +140,9 @@ class Judge:
         profile: Optional[str] = None,
         judge_model: str = "claude-3-5-sonnet-latest",
         ignore_tools: Optional[List[str]] = None,
+        retries: Optional[int] = None,
     ):
+        self.retries = retries or 10
         self.profile = profile or mcp_run.ProfileSlug("~", "default")
         self.ignore_tools = ignore_tools or []
         self.db = db or Database()
@@ -142,6 +183,8 @@ class Judge:
             pystache.render(test.prompt, test.vars),
             test.check,
             test.expected_tools,
+            test.task,
+            test.task_run,
         )
 
         if save:
@@ -237,17 +280,94 @@ class Judge:
 
         return result
 
+    async def _evaluate_task_run(
+        self,
+        client: mcp_run.Client,
+        run: mcp_run.TaskRun,
+        check: str,
+        expected_tools: List[str],
+        model_config: ModelApiConfig,
+    ) -> Score:
+        logger.info(f"Analyzing task run {run.name}")
+        prompt = run.results_list[0]["exchange"]["content"]
+        agent = Chat(
+            client=client,
+            model=model_config,
+            ignore_tools=self.ignore_tools,
+            result_type=ScoreModel,
+            system_prompt=SYSTEM_PROMPT,
+            result_retries=self.retries,
+        )
+
+        res = await agent.send_message(
+            format_judge_prompt(prompt, run.results_list, check, expected_tools)
+        )
+
+        tool_analysis = ToolAnalysis()
+
+        for i, event in enumerate(run.results_list):
+            if event["msg"] == "call tool request":
+                tool_analysis.analyze_message(
+                    {
+                        "tool": {
+                            "name": event["params"]["name"],
+                            "input": event["params"]["arguments"],
+                        }
+                    },
+                    i,
+                )
+
+        duration = (run.modified_at - run.created_at).total_seconds()
+        return Score(
+            score=res.data,
+            model=run._task.provider["settings"]["model"] + "-" + run.name,
+            duration=duration,
+            tool_analysis=tool_analysis.tool_analysis,
+            redundant_tool_calls=tool_analysis.redundant_tool_calls,
+            tool_calls=tool_analysis.total_tool_calls,
+            trace=run.results_list,
+        )
+
     async def run(
         self,
         prompt: str,
         check: str,
         expected_tools: List[str],
+        task: str | None = None,
+        task_run: str | None = None,
     ) -> Results:
         """Run evaluation across all models."""
         scores = []
         total_duration = timedelta(seconds=0)
 
         model_config = ModelApiConfig.get_model_config(self.model)
+        if task is not None:
+            client = mcp_run.Client(config=mcp_run.ClientConfig(profile=self.profile))
+            if task_run == "all":
+                for run in client.list_task_runs(task):
+                    scores.append(
+                        await self._evaluate_task_run(
+                            client, run, check, expected_tools, model_config
+                        )
+                    )
+            else:
+                try:
+                    task_run = int(task_run or -1)
+                except ValueError:
+                    pass
+                if isinstance(task_run, int):
+                    run = task_run_index(client, task, index=task_run)
+                else:
+                    run = load_task_run(client, task, task_run)
+                if run is not None:
+                    scores.append(
+                        await self._evaluate_task_run(
+                            client, run, check, expected_tools, model_config
+                        )
+                    )
+                else:
+                    logger.error(f"Unable to load {task_run} for task {task}")
+
         for model in self.models:
             start = datetime.now()
             tool_analysis = ToolAnalysis()
@@ -276,23 +396,12 @@ class Judge:
                 ignore_tools=self.ignore_tools,
                 result_type=ScoreModel,
                 system_prompt=SYSTEM_PROMPT,
-                result_retries=10,
+                result_retries=self.retries,
             )
 
-            res = await agent.send_message(f"""
-<settings>
-Current date and time: {datetime.now().isoformat()}
-</settings>
-<prompt>
-{prompt}
-</prompt>
-<output>
-{json.dumps(result)}
-</output>
-<check>{check}</check>
-<expected-tools>{", ".join(expected_tools)}</expected-tools>
-""")
-
+            res = await agent.send_message(
+                format_judge_prompt(prompt, result, check, expected_tools)
+            )
             scores.append(
                 Score(
                     score=res.data,
@@ -301,6 +410,7 @@ Current date and time: {datetime.now().isoformat()}
                     tool_analysis=tool_analysis.tool_analysis,
                     redundant_tool_calls=tool_analysis.redundant_tool_calls,
                     tool_calls=tool_analysis.total_tool_calls,
+                    trace=result,
                 )
             )
 

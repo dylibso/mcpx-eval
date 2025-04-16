@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "jinja2>=3.1.5",
     "matplotlib>=3.10.0",
+    "mcp-run>=0.4.4",
     "mcpx-py>=0.4.2",
     "pandas>=2.2.0",
     "pystache>=0.6.7",
@@ -14,9 +15,6 @@ dependencies = [
 
 [tool.uv]
 package = true
-
-# [tool.uv.sources]
-# mcpx-py = { git = "https://github.com/dylibso/mcpx-py" }
 
 [dependency-groups]
 dev = [
