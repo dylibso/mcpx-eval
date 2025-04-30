@@ -7,6 +7,8 @@ import os
 
 from mcpx_py import Chat, mcp_run, openai_compatible_model
 import pystache
+import weave
+from weave.flow.eval_imperative import EvaluationLogger
 
 from .models import ScoreModel, Score, Results, Test, Model
 from .database import Database
@@ -142,6 +144,7 @@ class Judge:
         judge_model: str = "claude-3-5-sonnet-latest",
         ignore_tools: Optional[List[str]] = None,
         retries: Optional[int] = None,
+        weave_project: str | None = None,
     ):
         self.retries = retries or 10
         self.profile = profile or mcp_run.ProfileSlug("~", "default")
@@ -152,6 +155,7 @@ class Judge:
         if models is not None:
             for model in models:
                 self.add_model(model)
+        self.weave_project = weave_project or os.environ.get("WANDB_PROJECT")
 
     def add_model(
         self,
@@ -281,6 +285,7 @@ class Judge:
 
         return result
 
+    @weave.op()
     async def _evaluate_task_run(
         self,
         client: mcp_run.Client,
@@ -299,6 +304,11 @@ class Judge:
             system_prompt=SYSTEM_PROMPT,
             result_retries=self.retries,
         )
+        eval_logger = None
+        if self.weave_project is not None:
+            eval_logger = EvaluationLogger(
+                model=str(model_config).replace("-", "_"),
+            )
 
         res = await agent.send_message(
             format_judge_prompt(prompt, run.results_list, check, expected_tools)
@@ -317,6 +327,15 @@ class Judge:
                     },
                     i,
                 )
+
+        pred_logger = None
+        if self.weave_project is not None:
+            pred_logger = eval_logger.log_prediction({"prompt": prompt}, res.data)
+            pred_logger.log_score(scorer="accuracy", score=res.data.accuracy)
+            pred_logger.log_score(scorer="completeness", score=res.data.completeness)
+            pred_logger.finish()
+            eval_logger.log_summary(res.data.dict())
+            eval_logger.finish()
 
         duration = (run.modified_at - run.created_at).total_seconds()
         return Score(
@@ -339,6 +358,9 @@ class Judge:
         vars: dict | None = None,
     ) -> Results:
         """Run evaluation across all models."""
+        if self.weave_project is not None:
+            weave.init(self.weave_project)
+
         scores = []
         total_duration = timedelta(seconds=0)
 
@@ -392,6 +414,12 @@ class Judge:
                     logger.error(f"Unable to load {task_run} for task {task}")
 
         for model in self.models:
+            eval_logger = None
+            if self.weave_project is not None:
+                eval_logger = EvaluationLogger(
+                    model=model.slug.replace("-", "_"),
+                )
+
             start = datetime.now()
             tool_analysis = ToolAnalysis()
 
@@ -400,6 +428,12 @@ class Judge:
 
             if result is None:
                 continue
+
+            pred_logger = None
+            if self.weave_project is not None:
+                pred_logger = eval_logger.log_prediction(
+                    {"prompt": prompt}, result["messages"]
+                )
 
             duration = datetime.now() - start
             duration_seconds = duration.total_seconds()
@@ -425,16 +459,26 @@ class Judge:
             res = await agent.send_message(
                 format_judge_prompt(prompt, result, check, expected_tools)
             )
-            scores.append(
-                Score(
-                    score=res.data,
-                    model=model.slug,
-                    duration=duration_seconds,
-                    tool_analysis=tool_analysis.tool_analysis,
-                    redundant_tool_calls=tool_analysis.redundant_tool_calls,
-                    tool_calls=tool_analysis.total_tool_calls,
-                    trace=result,
-                )
+            score = Score(
+                score=res.data,
+                model=model.slug,
+                duration=duration_seconds,
+                tool_analysis=tool_analysis.tool_analysis,
+                redundant_tool_calls=tool_analysis.redundant_tool_calls,
+                tool_calls=tool_analysis.total_tool_calls,
+                trace=result,
             )
+
+            if self.weave_project is not None:
+                pred_logger.log_score(scorer="accuracy", score=score.score.accuracy)
+                pred_logger.log_score(
+                    scorer="completeness", score=score.score.completeness
+                )
+
+                pred_logger.finish()
+
+                eval_logger.log_summary(score.dict())
+                eval_logger.finish()
+            scores.append(score)
 
         return Results(scores=scores, duration=total_duration.total_seconds())

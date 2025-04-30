@@ -11,6 +11,7 @@ dependencies = [
     "mcpx-py>=0.4.2",
     "pandas>=2.2.0",
     "pystache>=0.6.7",
+    "weave>=0.51.44",
 ]
 
 [tool.uv]
