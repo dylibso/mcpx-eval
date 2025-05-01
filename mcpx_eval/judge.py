@@ -139,7 +139,7 @@ class Judge:
         models: Optional[List[Model | str]] = None,
         db: Optional[Database] = None,
         profile: Optional[str] = None,
-        judge_model: str = "claude-3-5-sonnet-latest",
+        judge_model: str | Model = "claude-3-5-sonnet-latest",
         ignore_tools: Optional[List[str]] = None,
         retries: Optional[int] = None,
     ):
@@ -148,7 +148,10 @@ class Judge:
         self.ignore_tools = ignore_tools or []
         self.db = db or Database()
         self.models = []
-        self.model = Model(name=judge_model)
+        if isinstance(judge_model, Model):
+            self.model = judge_model
+        else:
+            self.model = Model(name=judge_model)
         if models is not None:
             for model in models:
                 self.add_model(model)
