@@ -38,6 +38,30 @@ def task_run_index(
         return None
 
 
+class WeaveLogger:
+    project: str | None
+    eval_logger: EvaluationLogger | None
+
+    def __init__(self, model: str, project: str | None = None):
+        self.project = project or os.environ.get("WANDB_PROJECT")
+        self.eval_logger = None
+        if self.project is not None:
+            weave.init(self.project)
+            self.eval_logger = EvaluationLogger(model=model.replace("-", "_"))
+
+    def log_results(self, prompt: str, score: Score):
+        if self.project is None or self.eval_logger is None:
+            return
+        pred_logger = self.eval_logger.log_prediction(
+            {"prompt": prompt}, score.llm_output
+        )
+        pred_logger.log_score(scorer="accuracy", score=score.accuracy)
+        pred_logger.log_score(scorer="completeness", score=score.completeness)
+        pred_logger.finish()
+        self.eval_logger.log_summary(score.dict())
+        self.eval_logger.finish()
+
+
 class ModelApiConfig:
     """Helper class to manage model API configurations."""
 
@@ -304,11 +328,6 @@ class Judge:
             system_prompt=SYSTEM_PROMPT,
             result_retries=self.retries,
         )
-        eval_logger = None
-        if self.weave_project is not None:
-            eval_logger = EvaluationLogger(
-                model=str(model_config).replace("-", "_"),
-            )
 
         res = await agent.send_message(
             format_judge_prompt(prompt, run.results_list, check, expected_tools)
@@ -328,14 +347,8 @@ class Judge:
                     i,
                 )
 
-        pred_logger = None
-        if self.weave_project is not None:
-            pred_logger = eval_logger.log_prediction({"prompt": prompt}, res.data)
-            pred_logger.log_score(scorer="accuracy", score=res.data.accuracy)
-            pred_logger.log_score(scorer="completeness", score=res.data.completeness)
-            pred_logger.finish()
-            eval_logger.log_summary(res.data.dict())
-            eval_logger.finish()
+        w = WeaveLogger(model=str(model_config), project=self.weave_project)
+        w.log_results(prompt, res.data)
 
         duration = (run.modified_at - run.created_at).total_seconds()
         return Score(
@@ -358,9 +371,6 @@ class Judge:
         vars: dict | None = None,
     ) -> Results:
         """Run evaluation across all models."""
-        if self.weave_project is not None:
-            weave.init(self.weave_project)
-
         scores = []
         total_duration = timedelta(seconds=0)
 
@@ -414,12 +424,6 @@ class Judge:
                     logger.error(f"Unable to load {task_run} for task {task}")
 
         for model in self.models:
-            eval_logger = None
-            if self.weave_project is not None:
-                eval_logger = EvaluationLogger(
-                    model=model.slug.replace("-", "_"),
-                )
-
             start = datetime.now()
             tool_analysis = ToolAnalysis()
 
@@ -428,12 +432,6 @@ class Judge:
 
             if result is None:
                 continue
-
-            pred_logger = None
-            if self.weave_project is not None:
-                pred_logger = eval_logger.log_prediction(
-                    {"prompt": prompt}, result["messages"]
-                )
 
             duration = datetime.now() - start
             duration_seconds = duration.total_seconds()
@@ -469,16 +467,9 @@ class Judge:
                 trace=result,
             )
 
-            if self.weave_project is not None:
-                pred_logger.log_score(scorer="accuracy", score=score.score.accuracy)
-                pred_logger.log_score(
-                    scorer="completeness", score=score.score.completeness
-                )
+            w = WeaveLogger(model=model.slug, project=self.weave_project)
+            w.log_results(prompt, res.data)
 
-                pred_logger.finish()
-
-                eval_logger.log_summary(score.dict())
-                eval_logger.finish()
             scores.append(score)
 
         return Results(scores=scores, duration=total_duration.total_seconds())
