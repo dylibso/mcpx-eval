@@ -64,7 +64,12 @@ class Model:
     ):
         self.model_config = model_config
         if model_config is not None:
-            provider, model_name, prof = parse_model(self.model_config)
+            if isinstance(model_config, ModelConfig):
+                provider = self.model_config.system
+                model_name = self.model_config.model_name
+                prof = profile or "~/default"
+            else:
+                provider, model_name, prof = parse_model(self.model_config)
         else:
             provider, model_name, prof = parse_model(name)
         self.provider = provider
