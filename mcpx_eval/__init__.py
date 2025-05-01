@@ -16,21 +16,29 @@ from pydantic_ai.models.openai import (
 
 
 class AnthropicClient(AsyncAnthropic):
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+
     @property
     def client(self):
         return self._client
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    @property
+    def system(self):
+        return self._system
 
 
 class OpenAIClient(AsyncOpenAI):
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+
     @property
     def client(self):
         return self._client
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    @property
+    def system(self):
+        return self._system
 
 
 logger = logging.getLogger(__name__)
