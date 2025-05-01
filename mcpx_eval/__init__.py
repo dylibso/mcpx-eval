@@ -7,12 +7,24 @@ from .judge import Judge
 
 from pydantic_ai.models.anthropic import (
     AnthropicModel as AnthropicModelConfig,
-    AsyncAnthropic as AnthropicClient,
+    AsyncAnthropic,
 )
 from pydantic_ai.models.openai import (
     OpenAIModel as OpenAIModelConfig,
-    AsyncOpenAI as OpenAIClient,
+    AsyncOpenAI,
 )
+
+
+class AnthropicClient(AsyncAnthropic):
+    @property
+    def client(self):
+        return self._client
+
+
+class OpenAIClient(AsyncOpenAI):
+    @property
+    def client(self):
+        return self._client
 
 
 logger = logging.getLogger(__name__)
