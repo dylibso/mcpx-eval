@@ -20,11 +20,17 @@ class AnthropicClient(AsyncAnthropic):
     def client(self):
         return self._client
 
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+
 
 class OpenAIClient(AsyncOpenAI):
     @property
     def client(self):
         return self._client
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
 
 
 logger = logging.getLogger(__name__)
