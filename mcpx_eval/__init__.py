@@ -10,7 +10,7 @@ from pydantic_ai.models.anthropic import (
     AsyncAnthropic as AnthropicClient,
 )
 from pydantic_ai.models.openai import (
-    AnthropicModel as OpenAIModelConfig,
+    OpenAIModel as OpenAIModelConfig,
     AsyncOpenAI as OpenAIClient,
 )
 
