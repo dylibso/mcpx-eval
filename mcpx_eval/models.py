@@ -24,6 +24,11 @@ def parse_model(m: str) -> Tuple[Optional[str], str, str]:
     name = m
     profile = DEFAULT_PROFILE
 
+    if not isinstance(m, str):
+        provider = self.model_config.system
+        model_name = self.model_config.model_name
+        return (provider, model_name, profile)
+
     # Split provider and name
     if ":" in m:
         provider, name = m.split(":", maxsplit=1)
@@ -64,12 +69,7 @@ class Model:
     ):
         self.model_config = model_config
         if model_config is not None:
-            if isinstance(model_config, ModelConfig):
-                provider = self.model_config.system
-                model_name = self.model_config.model_name
-                prof = profile or "~/default"
-            else:
-                provider, model_name, prof = parse_model(self.model_config)
+            provider, model_name, prof = parse_model(self.model_config)
         else:
             provider, model_name, prof = parse_model(name)
         self.provider = provider
