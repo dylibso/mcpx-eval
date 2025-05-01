@@ -5,9 +5,15 @@ from .database import Database
 from .judge import Judge
 
 
-from pydantic_ai.models.anthropic import AnthropicModel as AnthropicModelConfig
-from pydantic_ai.models.openai import AnthropicModel as OpenAIModelConfig
-from pydantic_ai.models.gemini import GeminiModel as GeminiModelConfig
+from pydantic_ai.models.anthropic import (
+    AnthropicModel as AnthropicModelConfig,
+    AsyncAnthropic as AnthropicClient,
+)
+from pydantic_ai.models.openai import (
+    AnthropicModel as OpenAIModelConfig,
+    AsyncOpenAI as OpenAIClient,
+)
+
 
 logger = logging.getLogger(__name__)
 
@@ -21,5 +27,6 @@ __all__ = [
     "ModelConfig",
     "AnthropicModelConfig",
     "OpenAIModelConfig",
-    "GeminiModelConfig",
+    "AnthropicClient",
+    "OpenAIClient",
 ]
