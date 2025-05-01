@@ -25,8 +25,8 @@ def parse_model(m: str) -> Tuple[Optional[str], str, str]:
     profile = DEFAULT_PROFILE
 
     if not isinstance(m, str):
-        provider = self.model_config.system
-        model_name = self.model_config.model_name
+        provider = m.system
+        model_name = m.model_name
         return (provider, model_name, profile)
 
     # Split provider and name
