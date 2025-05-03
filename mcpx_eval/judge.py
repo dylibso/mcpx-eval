@@ -109,6 +109,12 @@ class ToolAnalysis:
 def format_judge_prompt(prompt, results, check, expected_tools):
     if check is None or check == "":
         check = "Make sure the output matches the requirments of the prompt"
+    if len(expected_tools) == 0:
+        expected_tools = ""
+    else:
+        expected_tools = f""" 
+    <expected-tools>{", ".join(expected_tools)}</expected-tools>
+    """
     return f"""
     <settings>
     Current date and time: {datetime.now().isoformat()}
@@ -120,7 +126,7 @@ def format_judge_prompt(prompt, results, check, expected_tools):
     {json.dumps(results)}
     </output>
     <check>{check}</check>
-    <expected-tools>{", ".join(expected_tools)}</expected-tools>
+    {expected_tools}
     """
 
 

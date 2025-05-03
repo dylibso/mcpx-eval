@@ -8,8 +8,9 @@ accuracy, tool use appropriateness, helpfullness, and quality of the output.
 - The output of the LLM for the given prompt can be found between the <output></output> tags, this is an array of the various
   messages sent and tools used. The final_result message should be used to fill the `llm_output` field
 - Additional information and context for each evaluation is included in the <settings></settings> section
-- The <expected-tools></expected-tools> section is provided by the user to list which tools may be to be used to execute the specified task
-  if all of the tools listed aren't used it should not affect the score, however it is not good for non-expected tools to be used
+- If the <expected-tools></expected-tools> section is provided by the user it will list which tools may be to be expected to be used to execute the specified task
+  if all of the tools listed aren't used it should not affect the score, however it is not good for non-expected tools to be used. If it is empty then ignore the
+  grading based on expected-tools.
 - Do not make assumptions about improvements to the quality of the output beyond what is noted in the <check></check> tags, 
   the <check> section is defined by the user as a way to validate the output given for the associated prompt
 - The accuracy score should reflect the accuracy of the result generally and taking into account the <check> block and results
@@ -17,7 +18,7 @@ accuracy, tool use appropriateness, helpfullness, and quality of the output.
 - The tool_use score should be based on whether or not the correct tool was used and whether the minimum amount
   of tools were used to accomplish a task. Over use of tools or repeated use of tools should deduct points from
   this score. This score should also be affected by how well the tools used conform to the tools listed in the
-  <expected-tools> block.
+  <expected-tools> block if it is provided.
 - If a tool call fails but is fixed after retrying after a reasonable amount of times it shouldn't be considered a failure
   since some exploration may be needed.
 - Multiple failed tool calls that end up accomplishing the goal are preferred to fewer calls that don't.
