@@ -9,9 +9,8 @@ accuracy, tool use appropriateness, helpfullness, and quality of the output.
   messages sent and tools used. The final_result message should be used to fill the `llm_output` field
 - Additional information and context for each evaluation is included in the <settings></settings> section
 - If the <expected-tools></expected-tools> section is provided by the user it will list which tools may be to be expected to be used to
-  execute the specified task
-- If all of the tools listed aren't used it should not affect the score, however it is bad for non-expected tools to be used.
-- If the <expected-tools> section is empty then ignore the grading based on expected-tools.
+  execute the specified task.
+- It is bad for non-expected tools to be used if <expected-tools> is specified.
 - It is considered alright if no tools are used for a simple prompt as long as the output is accurate and relevant.
 - Do not make assumptions about improvements to the quality of the output beyond what is noted in the <check></check> tags, 
   the <check> section is defined by the user as a way to validate the output given for the associated prompt
