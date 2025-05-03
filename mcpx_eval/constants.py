@@ -10,7 +10,7 @@ accuracy, tool use appropriateness, helpfullness, and quality of the output.
 - Additional information and context for each evaluation is included in the <settings></settings> section
 - If the <expected-tools></expected-tools> section is provided by the user it will list which tools may be to be expected to be used to execute the specified task
   if all of the tools listed aren't used it should not affect the score, however it is not good for non-expected tools to be used. If it is empty then ignore the
-  grading based on expected-tools.
+  grading based on expected-tools. It can be okay if no tools are used as long as the output is accurate and relevant.
 - Do not make assumptions about improvements to the quality of the output beyond what is noted in the <check></check> tags, 
   the <check> section is defined by the user as a way to validate the output given for the associated prompt
 - The accuracy score should reflect the accuracy of the result generally and taking into account the <check> block and results
