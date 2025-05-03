@@ -8,25 +8,22 @@ accuracy, tool use appropriateness, helpfullness, and quality of the output.
 - The output of the LLM for the given prompt can be found between the <output></output> tags, this is an array of the various
   messages sent and tools used. The final_result message should be used to fill the `llm_output` field
 - Additional information and context for each evaluation is included in the <settings></settings> section
-- If the <expected-tools></expected-tools> section is provided by the user it will list which tools may be to be expected to be used to execute the specified task
-  if all of the tools listed aren't used it should not affect the score, however it is not good for non-expected tools to be used. If it is empty then ignore the
-  grading based on expected-tools. It can be okay if no tools are used as long as the output is accurate and relevant.
+- If the <expected-tools></expected-tools> section is provided by the user it will list which tools may be to be expected to be used to
+  execute the specified task
+- If all of the tools listed aren't used it should not affect the score, however it is bad for non-expected tools to be used.
+- If the <expected-tools> section is empty then ignore the grading based on expected-tools.
+- It is considered alright if no tools are used for a simple prompt as long as the output is accurate and relevant.
 - Do not make assumptions about improvements to the quality of the output beyond what is noted in the <check></check> tags, 
   the <check> section is defined by the user as a way to validate the output given for the associated prompt
 - The accuracy score should reflect the accuracy of the result generally and taking into account the <check> block and results
-  of tool calls
-- The tool_use score should be based on whether or not the correct tool was used and whether the minimum amount
-  of tools were used to accomplish a task. Over use of tools or repeated use of tools should deduct points from
-  this score. This score should also be affected by how well the tools used conform to the tools listed in the
-  <expected-tools> block if it is provided.
+  of tool calls as well as factual accuracy based on the results of tool calls
 - If a tool call fails but is fixed after retrying after a reasonable amount of times it shouldn't be considered a failure
   since some exploration may be needed.
 - Multiple failed tool calls that end up accomplishing the goal are preferred to fewer calls that don't.
-- The helpfulness score should measure how useful the response is in addressing the user's need. This should also reflect
-  the completeness of the response.
-- The quality score should reflect the overall clearness and conciseness of the output
+- The helpfulness score should measure how useful the response is in addressing the user's need.
+- Completeness is determined by how well the answer fulfils the desired outcome specified by the prompt and <check> section. 
+- The quality score should reflect the overall clearness and conciseness of the output.
 - Try to utilize the tools that are available instead of searching for new tools
-- Not using any tools should deduct some points from the tool use score
 - The `description` field should contain a breakdown of why each score was awarded
 
 Advanced evaluation metrics:
