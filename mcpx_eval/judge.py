@@ -309,9 +309,10 @@ class Judge:
             result_retries=self.retries,
         )
 
-        res = await agent.send_message(
-            format_judge_prompt(prompt, run.results_list, check, expected_tools)
-        )
+        async with agent.agent.run_mcp_servers():
+            res = await agent.send_message(
+                format_judge_prompt(prompt, run.results_list, check, expected_tools)
+            )
 
         tool_analysis = ToolAnalysis()
 
