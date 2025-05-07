@@ -230,59 +230,58 @@ class Judge:
                 # If tools is a mock object, get the return value directly
                 result["tools-available"] = chat.client.tools.keys()
 
-                # async with chat.agent.run_mcp_servers():
-                async for node in chat.iter(prompt):
-                    if hasattr(node, "model_response"):
-                        for part in node.model_response.parts:
-                            if part.part_kind == "text":
-                                logger.info(part.content)
-                                result["messages"].append(
-                                    {"kind": part.part_kind, "text": part.content}
-                                )
-                            elif part.part_kind == "tool-call":
-                                logger.info(
-                                    f"Tool {part.tool_name}({part.tool_call_id}): {part.args}"
-                                )
-                                result["messages"].append(
-                                    {
-                                        "kind": part.part_kind,
-                                        "tool": {
-                                            "name": part.tool_name,
-                                            "input": part.args_as_dict(),
-                                        },
-                                        "tool_call_id": part.tool_call_id,
-                                    }
-                                )
-                                tool_analysis.analyze_message(
-                                    result["messages"][-1], len(result["messages"]) - 1
-                                )
+            async for node in chat.iter(prompt):
+                if hasattr(node, "model_response"):
+                    for part in node.model_response.parts:
+                        if part.part_kind == "text":
+                            logger.info(part.content)
+                            result["messages"].append(
+                                {"kind": part.part_kind, "text": part.content}
+                            )
+                        elif part.part_kind == "tool-call":
+                            logger.info(
+                                f"Tool {part.tool_name}({part.tool_call_id}): {part.args}"
+                            )
+                            result["messages"].append(
+                                {
+                                    "kind": part.part_kind,
+                                    "tool": {
+                                        "name": part.tool_name,
+                                        "input": part.args_as_dict(),
+                                    },
+                                    "tool_call_id": part.tool_call_id,
+                                }
+                            )
+                            tool_analysis.analyze_message(
+                                result["messages"][-1], len(result["messages"]) - 1
+                            )
 
-                    elif hasattr(node, "request"):
-                        for part in node.request.parts:
-                            if part.part_kind == "text":
-                                result["messages"].append(
-                                    {"kind": part.part_kind, "text": part.content}
-                                )
-                            elif part.part_kind == "tool-return":
-                                logger.info(
-                                    f"Tool returned {part.tool_name}({part.tool_call_id})"
-                                )
-                                logger.debug(
-                                    f"Tool result {part.tool_name}({part.tool_call_id}):\n{part.content}"
-                                )
-                                result["messages"].append(
-                                    {
-                                        "kind": part.part_kind,
-                                        "tool_name": part.tool_name,
-                                        "content": part.content,
-                                        "tool_call_id": part.tool_call_id,
-                                    }
-                                )
-                    elif hasattr(node, "data"):
-                        logger.debug(f"Final result: {node.data.data}")
-                        result["messages"].append(
-                            {"kind": "final_result", "text": node.data.data}
-                        )
+                elif hasattr(node, "request"):
+                    for part in node.request.parts:
+                        if part.part_kind == "text":
+                            result["messages"].append(
+                                {"kind": part.part_kind, "text": part.content}
+                            )
+                        elif part.part_kind == "tool-return":
+                            logger.info(
+                                f"Tool returned {part.tool_name}({part.tool_call_id})"
+                            )
+                            logger.debug(
+                                f"Tool result {part.tool_name}({part.tool_call_id}):\n{part.content}"
+                            )
+                            result["messages"].append(
+                                {
+                                    "kind": part.part_kind,
+                                    "tool_name": part.tool_name,
+                                    "content": part.content,
+                                    "tool_call_id": part.tool_call_id,
+                                }
+                            )
+                elif hasattr(node, "data"):
+                    logger.debug(f"Final result: {node.data.data}")
+                    result["messages"].append(
+                        {"kind": "final_result", "text": node.data.data}
+                    )
 
         except KeyboardInterrupt:
             return None
