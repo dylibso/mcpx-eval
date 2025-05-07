@@ -316,30 +316,30 @@ class Judge:
                 format_judge_prompt(prompt, run.results_list, check, expected_tools)
             )
 
-        tool_analysis = ToolAnalysis()
+            tool_analysis = ToolAnalysis()
 
-        for i, event in enumerate(run.results_list):
-            if event["msg"] == "call tool request":
-                tool_analysis.analyze_message(
-                    {
-                        "tool": {
-                            "name": event["params"]["name"],
-                            "input": event["params"]["arguments"],
-                        }
-                    },
-                    i,
-                )
+            for i, event in enumerate(run.results_list):
+                if event["msg"] == "call tool request":
+                    tool_analysis.analyze_message(
+                        {
+                            "tool": {
+                                "name": event["params"]["name"],
+                                "input": event["params"]["arguments"],
+                            }
+                        },
+                        i,
+                    )
 
-        duration = (run.modified_at - run.created_at).total_seconds()
-        return Score(
-            score=res.data,
-            model=run._task.provider["settings"]["model"] + "-" + run.name,
-            duration=duration,
-            tool_analysis=tool_analysis.tool_analysis,
-            redundant_tool_calls=tool_analysis.redundant_tool_calls,
-            tool_calls=tool_analysis.total_tool_calls,
-            trace=run.results_list,
-        )
+            duration = (run.modified_at - run.created_at).total_seconds()
+            return Score(
+                score=res.data,
+                model=run._task.provider["settings"]["model"] + "-" + run.name,
+                duration=duration,
+                tool_analysis=tool_analysis.tool_analysis,
+                redundant_tool_calls=tool_analysis.redundant_tool_calls,
+                tool_calls=tool_analysis.total_tool_calls,
+                trace=run.results_list,
+            )
 
     async def run(
         self,
