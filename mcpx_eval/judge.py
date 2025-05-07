@@ -185,6 +185,7 @@ class Judge:
         if test.task is not None:
             client = mcp_run.Client(config=mcp_run.ClientConfig(profile=profile))
             tasks = client.list_tasks(profile)
+            tasks = {task.name: task for task in tasks}
             if test.task not in tasks:
                 raise Exception(f"Invalid task, {test.task} not found in {profile}")
             test.prompt = tasks[test.task].prompt
