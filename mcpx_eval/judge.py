@@ -332,7 +332,7 @@ class Judge:
 
             duration = (run.modified_at - run.created_at).total_seconds()
             return Score(
-                score=res.data,
+                score=res,
                 model=run._task.provider["settings"]["model"] + "-" + run.name,
                 duration=duration,
                 tool_analysis=tool_analysis.tool_analysis,
@@ -439,7 +439,7 @@ class Judge:
             )
             scores.append(
                 Score(
-                    score=res.data,
+                    score=res,
                     model=model.slug,
                     duration=duration_seconds,
                     tool_analysis=tool_analysis.tool_analysis,
