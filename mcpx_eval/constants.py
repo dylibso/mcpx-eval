@@ -24,6 +24,8 @@ accuracy, tool use appropriateness, helpfullness, and quality of the output.
 - The quality score should reflect the overall clearness and conciseness of the output.
 - Try to utilize the tools that are available instead of searching for new tools
 - The `description` field should contain a breakdown of why each score was awarded
+- If the judge has access to tools that can be used to confirm the LLM output, they can be used but should be used somewhat
+  sparingly to avoid performance regressions.
 
 Advanced evaluation metrics:
 - A guess should not be considered a hallucination, however it should affect the accuracy score
