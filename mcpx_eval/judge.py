@@ -230,7 +230,7 @@ class Judge:
                 # If tools is a mock object, get the return value directly
                 result["tools-available"] = chat.client.tools.keys()
 
-            async with chat.agent.run_mcp_servers():
+                # async with chat.agent.run_mcp_servers():
                 async for node in chat.iter(prompt):
                     if hasattr(node, "model_response"):
                         for part in node.model_response.parts:
