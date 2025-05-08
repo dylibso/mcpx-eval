@@ -5,9 +5,6 @@ from mcpx_eval import Judge, Model, Score, Results, Database
 from mcpx_eval.models import ScoreModel
 from mcpx_eval.judge import ToolAnalysis
 
-with patch("mcp_run.config._default_session_id") as MockClass:
-    MockClass.return_value = ""
-
 
 class TestJudge(unittest.TestCase):
     def setUp(self):
@@ -15,11 +12,8 @@ class TestJudge(unittest.TestCase):
             models=["test-model"],
             judge_model="test-judge",
             ignore_tools=["ignored-tool"],
+            client=MagicMock(),
         )
-
-    @patch("mcp_run.config._default_session_id")
-    def session_id(self, f):
-        f.return_value = ""
 
     def test_add_model(self):
         """Test adding models to the judge"""
