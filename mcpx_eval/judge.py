@@ -139,7 +139,7 @@ class Judge:
     db: Database
     profile: Optional[str]
     retries: int
-    session_id: Optional[str]
+    client: mcp_run.Client
 
     def __init__(
         self,
@@ -149,11 +149,11 @@ class Judge:
         judge_model: str | Model = "claude-3-5-sonnet-latest",
         ignore_tools: Optional[List[str]] = None,
         retries: Optional[int] = None,
-        session_id: Optional[str] = None,
+        client: Optional[mcp_run.Client] = None,
     ):
-        self.session_id = session_id
         self.retries = retries or 10
         self.profile = profile or mcp_run.ProfileSlug("~", "default")
+        self.client = client or mcp_run.Client(profile=self.profile)
         self.ignore_tools = ignore_tools or []
         self.db = db or Database()
         self.models = []
@@ -187,7 +187,13 @@ class Judge:
 
         if test.task is not None:
             client = mcp_run.Client(
-                session_id=self.session_id, config=mcp_run.ClientConfig(profile=profile)
+                session_id=self.client.session_id,
+                base_url=self.client.config.base_url,
+                config=mcp_run.ClientConfig(
+                    profile=profile,
+                    base_url=self.client.config.base_url,
+                    logger=self.client.config.logger,
+                ),
             )
             tasks = client.list_tasks(profile)
             tasks = {task.name: task for task in tasks}
@@ -221,7 +227,11 @@ class Judge:
             chat = Chat(
                 client=mcp_run.Client(
                     session_id=self.session_id,
-                    config=mcp_run.ClientConfig(profile=model.profile),
+                    config=mcp_run.ClientConfig(
+                        profile=model.profile,
+                        base_url=self.client.config.base_url,
+                        logger=self.client.config.logger,
+                    ),
                 ),
                 model=model_config,
                 ignore_tools=self.ignore_tools,
@@ -362,7 +372,11 @@ class Judge:
         if task is not None:
             client = mcp_run.Client(
                 session_id=self.session_id,
-                config=mcp_run.ClientConfig(profile=self.profile),
+                config=mcp_run.ClientConfig(
+                    profile=self.profile,
+                    base_url=self.client.config.base_url,
+                    logger=self.client.config.logger,
+                ),
             )
             if task_run.lower() == "all":
                 for run in client.list_task_runs(task):
@@ -433,7 +447,11 @@ class Judge:
             agent = Chat(
                 client=mcp_run.Client(
                     session_id=self.session_id,
-                    config=mcp_run.ClientConfig(profile=self.profile),
+                    config=mcp_run.ClientConfig(
+                        profile=self.profile,
+                        base_url=self.client.config.base_url,
+                        logger=self.client.config.logger,
+                    ),
                 ),
                 model=model_config,
                 ignore_tools=self.ignore_tools,
