@@ -310,28 +310,27 @@ class Judge:
             result_retries=self.retries,
         )
 
-        async with agent.agent.run_mcp_servers():
-            res = await agent.send_message(
-                format_judge_prompt(prompt, run.results_list, check, expected_tools)
-            )
+        res = await agent.send_message(
+            format_judge_prompt(prompt, run.results_list, check, expected_tools)
+        )
 
-            tool_analysis = ToolAnalysis()
+        tool_analysis = ToolAnalysis()
 
-            for i, event in enumerate(run.results_list):
-                if event["msg"] == "call tool request":
-                    tool_analysis.analyze_message(
-                        {
-                            "tool": {
-                                "name": event["params"]["name"],
-                                "input": event["params"]["arguments"],
-                            }
-                        },
-                        i,
-                    )
+        for i, event in enumerate(run.results_list):
+            if event["msg"] == "call tool request":
+                tool_analysis.analyze_message(
+                    {
+                        "tool": {
+                            "name": event["params"]["name"],
+                            "input": event["params"]["arguments"],
+                        }
+                    },
+                    i,
+                )
 
             duration = (run.modified_at - run.created_at).total_seconds()
             return Score(
-                score=res,
+                score=res.data,
                 model=run._task.provider["settings"]["model"] + "-" + run.name,
                 duration=duration,
                 tool_analysis=tool_analysis.tool_analysis,
@@ -438,7 +437,7 @@ class Judge:
             )
             scores.append(
                 Score(
-                    score=res,
+                    score=res.data,
                     model=model.slug,
                     duration=duration_seconds,
                     tool_analysis=tool_analysis.tool_analysis,
