@@ -17,6 +17,10 @@ class TestJudge(unittest.TestCase):
             ignore_tools=["ignored-tool"],
         )
 
+    @patch("mcp_run.config._default_session_id")
+    def session_id(self, f):
+        f.return_value = ""
+
     def test_add_model(self):
         """Test adding models to the judge"""
         judge = Judge()
