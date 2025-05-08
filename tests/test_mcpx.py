@@ -5,8 +5,8 @@ from mcpx_eval import Judge, Model, Score, Results, Database
 from mcpx_eval.models import ScoreModel
 from mcpx_eval.judge import ToolAnalysis
 
-# Mock for _default_session_id function
-patch('mcp_run.config._default_session_id', return_value='').start()
+with patch("mcp_run.config._default_session_id") as MockClass:
+    MockClass.return_value = ""
 
 
 class TestJudge(unittest.TestCase):
