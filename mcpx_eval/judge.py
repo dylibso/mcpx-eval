@@ -226,7 +226,7 @@ class Judge:
             model_config = ModelApiConfig.get_model_config(model)
             chat = Chat(
                 client=mcp_run.Client(
-                    session_id=self.session_id,
+                    session_id=self.client.session_id,
                     config=mcp_run.ClientConfig(
                         profile=model.profile,
                         base_url=self.client.config.base_url,
@@ -371,7 +371,7 @@ class Judge:
         model_config = ModelApiConfig.get_model_config(self.model)
         if task is not None:
             client = mcp_run.Client(
-                session_id=self.session_id,
+                session_id=self.client.session_id,
                 config=mcp_run.ClientConfig(
                     profile=self.profile,
                     base_url=self.client.config.base_url,
@@ -446,7 +446,7 @@ class Judge:
             )
             agent = Chat(
                 client=mcp_run.Client(
-                    session_id=self.session_id,
+                    session_id=self.client.session_id,
                     config=mcp_run.ClientConfig(
                         profile=self.profile,
                         base_url=self.client.config.base_url,
