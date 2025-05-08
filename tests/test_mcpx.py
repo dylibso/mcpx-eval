@@ -17,7 +17,9 @@ class TestJudge(unittest.TestCase):
 
     def test_add_model(self):
         """Test adding models to the judge"""
-        judge = Judge()
+        judge = Judge(
+            client=MagicMock(),
+        )
 
         # Test adding string model
         judge.add_model("gpt-4")
@@ -179,7 +181,7 @@ class TestJudgeEvaluation(unittest.IsolatedAsyncioTestCase):
         mock_chat_instance.iter = mock_iter
         mock_chat.return_value = mock_chat_instance
 
-        judge = Judge()
+        judge = Judge(client=MagicMock())
         model = Model(name="test-model")
         tool_analysis = ToolAnalysis()
 
@@ -212,7 +214,7 @@ class TestJudgeEvaluation(unittest.IsolatedAsyncioTestCase):
         mock_chat_instance.iter = mock_iter
         mock_chat.return_value = mock_chat_instance
 
-        judge = Judge()
+        judge = Judge(client=MagicMock())
         model = Model(name="test-model")
         tool_analysis = ToolAnalysis()
 
