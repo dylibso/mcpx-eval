@@ -1,8 +1,10 @@
 from pydantic import BaseModel, Field
+from pydantic_ai.models import Model as ModelConfig
 from typing import List, Dict, Any, Tuple, Optional
 import pandas as pd
 from dataclasses import dataclass
 from .constants import OPENAI_MODELS, DEFAULT_PROFILE
+
 
 import json
 
@@ -21,6 +23,11 @@ def parse_model(m: str) -> Tuple[Optional[str], str, str]:
     provider = None
     name = m
     profile = DEFAULT_PROFILE
+
+    if not isinstance(m, str):
+        provider = m.system
+        model_name = m.model_name
+        return (provider, model_name, profile)
 
     # Split provider and name
     if ":" in m:
@@ -51,11 +58,20 @@ class Model:
     profile: str
     provider: str
     trace: dict | None = None
+    model_config: ModelConfig | None = None
 
     def __init__(
-        self, name: str, profile: Optional[str] = None, trace: dict | None = None
+        self,
+        name: str,
+        profile: Optional[str] = None,
+        trace: dict | None = None,
+        model_config: ModelConfig | None = None,
     ):
-        provider, model_name, prof = parse_model(name)
+        self.model_config = model_config
+        if model_config is not None:
+            provider, model_name, prof = parse_model(self.model_config)
+        else:
+            provider, model_name, prof = parse_model(name)
         self.provider = provider
         self.name = model_name
         self.profile = profile if profile is not None else prof

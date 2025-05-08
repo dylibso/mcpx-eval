@@ -109,6 +109,12 @@ class ToolAnalysis:
 def format_judge_prompt(prompt, results, check, expected_tools):
     if check is None or check == "":
         check = "Make sure the output matches the requirments of the prompt"
+    if len(expected_tools) == 0:
+        expected_tools = ""
+    else:
+        expected_tools = f""" 
+    <expected-tools>{", ".join(expected_tools)}</expected-tools>
+    """
     return f"""
     <settings>
     Current date and time: {datetime.now().isoformat()}
@@ -120,7 +126,7 @@ def format_judge_prompt(prompt, results, check, expected_tools):
     {json.dumps(results)}
     </output>
     <check>{check}</check>
-    <expected-tools>{", ".join(expected_tools)}</expected-tools>
+    {expected_tools}
     """
 
 
@@ -133,22 +139,28 @@ class Judge:
     db: Database
     profile: Optional[str]
     retries: int
+    client: mcp_run.Client
 
     def __init__(
         self,
         models: Optional[List[Model | str]] = None,
         db: Optional[Database] = None,
         profile: Optional[str] = None,
-        judge_model: str = "claude-3-5-sonnet-latest",
+        judge_model: str | Model = "claude-3-5-sonnet-latest",
         ignore_tools: Optional[List[str]] = None,
         retries: Optional[int] = None,
+        client: Optional[mcp_run.Client] = None,
     ):
         self.retries = retries or 10
         self.profile = profile or mcp_run.ProfileSlug("~", "default")
+        self.client = client or mcp_run.Client(profile=self.profile)
         self.ignore_tools = ignore_tools or []
         self.db = db or Database()
         self.models = []
-        self.model = Model(name=judge_model)
+        if isinstance(judge_model, Model):
+            self.model = judge_model
+        else:
+            self.model = Model(name=judge_model)
         if models is not None:
             for model in models:
                 self.add_model(model)
@@ -174,8 +186,17 @@ class Judge:
             profile = mcp_run.ProfileSlug.parse(profile)
 
         if test.task is not None:
-            client = mcp_run.Client(config=mcp_run.ClientConfig(profile=profile))
-            tasks = client.tasks
+            client = mcp_run.Client(
+                session_id=self.client.session_id,
+                base_url=self.client.config.base_url,
+                config=mcp_run.ClientConfig(
+                    profile=profile,
+                    base_url=self.client.config.base_url,
+                    logger=self.client.config.logger,
+                ),
+            )
+            tasks = client.list_tasks(profile)
+            tasks = {task.name: task for task in tasks}
             if test.task not in tasks:
                 raise Exception(f"Invalid task, {test.task} not found in {profile}")
             test.prompt = tasks[test.task].prompt
@@ -205,7 +226,12 @@ class Judge:
             model_config = ModelApiConfig.get_model_config(model)
             chat = Chat(
                 client=mcp_run.Client(
-                    config=mcp_run.ClientConfig(profile=model.profile)
+                    session_id=self.client.session_id,
+                    config=mcp_run.ClientConfig(
+                        profile=model.profile,
+                        base_url=self.client.config.base_url,
+                        logger=self.client.config.logger,
+                    ),
                 ),
                 model=model_config,
                 ignore_tools=self.ignore_tools,
@@ -318,16 +344,16 @@ class Judge:
                     i,
                 )
 
-        duration = (run.modified_at - run.created_at).total_seconds()
-        return Score(
-            score=res.data,
-            model=run._task.provider["settings"]["model"] + "-" + run.name,
-            duration=duration,
-            tool_analysis=tool_analysis.tool_analysis,
-            redundant_tool_calls=tool_analysis.redundant_tool_calls,
-            tool_calls=tool_analysis.total_tool_calls,
-            trace=run.results_list,
-        )
+            duration = (run.modified_at - run.created_at).total_seconds()
+            return Score(
+                score=res.data,
+                model=run._task.provider["settings"]["model"] + "-" + run.name,
+                duration=duration,
+                tool_analysis=tool_analysis.tool_analysis,
+                redundant_tool_calls=tool_analysis.redundant_tool_calls,
+                tool_calls=tool_analysis.total_tool_calls,
+                trace=run.results_list,
+            )
 
     async def run(
         self,
@@ -344,7 +370,14 @@ class Judge:
 
         model_config = ModelApiConfig.get_model_config(self.model)
         if task is not None:
-            client = mcp_run.Client(config=mcp_run.ClientConfig(profile=self.profile))
+            client = mcp_run.Client(
+                session_id=self.client.session_id,
+                config=mcp_run.ClientConfig(
+                    profile=self.profile,
+                    base_url=self.client.config.base_url,
+                    logger=self.client.config.logger,
+                ),
+            )
             if task_run.lower() == "all":
                 for run in client.list_task_runs(task):
                     scores.append(
@@ -413,7 +446,12 @@ class Judge:
             )
             agent = Chat(
                 client=mcp_run.Client(
-                    config=mcp_run.ClientConfig(profile=self.profile)
+                    session_id=self.client.session_id,
+                    config=mcp_run.ClientConfig(
+                        profile=self.profile,
+                        base_url=self.client.config.base_url,
+                        logger=self.client.config.logger,
+                    ),
                 ),
                 model=model_config,
                 ignore_tools=self.ignore_tools,
