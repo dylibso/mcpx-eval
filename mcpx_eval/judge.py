@@ -139,6 +139,7 @@ class Judge:
     db: Database
     profile: Optional[str]
     retries: int
+    session_id: Optional[str]
 
     def __init__(
         self,
@@ -148,7 +149,9 @@ class Judge:
         judge_model: str | Model = "claude-3-5-sonnet-latest",
         ignore_tools: Optional[List[str]] = None,
         retries: Optional[int] = None,
+        session_id: Optional[str] = None,
     ):
+        self.session_id = session_id
         self.retries = retries or 10
         self.profile = profile or mcp_run.ProfileSlug("~", "default")
         self.ignore_tools = ignore_tools or []
@@ -183,7 +186,9 @@ class Judge:
             profile = mcp_run.ProfileSlug.parse(profile)
 
         if test.task is not None:
-            client = mcp_run.Client(config=mcp_run.ClientConfig(profile=profile))
+            client = mcp_run.Client(
+                session_id=self.session_id, config=mcp_run.ClientConfig(profile=profile)
+            )
             tasks = client.list_tasks(profile)
             tasks = {task.name: task for task in tasks}
             if test.task not in tasks:
@@ -215,7 +220,8 @@ class Judge:
             model_config = ModelApiConfig.get_model_config(model)
             chat = Chat(
                 client=mcp_run.Client(
-                    config=mcp_run.ClientConfig(profile=model.profile)
+                    session_id=self.session_id,
+                    config=mcp_run.ClientConfig(profile=model.profile),
                 ),
                 model=model_config,
                 ignore_tools=self.ignore_tools,
@@ -354,7 +360,10 @@ class Judge:
 
         model_config = ModelApiConfig.get_model_config(self.model)
         if task is not None:
-            client = mcp_run.Client(config=mcp_run.ClientConfig(profile=self.profile))
+            client = mcp_run.Client(
+                session_id=self.session_id,
+                config=mcp_run.ClientConfig(profile=self.profile),
+            )
             if task_run.lower() == "all":
                 for run in client.list_task_runs(task):
                     scores.append(
@@ -423,7 +432,8 @@ class Judge:
             )
             agent = Chat(
                 client=mcp_run.Client(
-                    config=mcp_run.ClientConfig(profile=self.profile)
+                    session_id=self.session_id,
+                    config=mcp_run.ClientConfig(profile=self.profile),
                 ),
                 model=model_config,
                 ignore_tools=self.ignore_tools,
