@@ -326,8 +326,10 @@ class Judge:
             result_retries=self.retries,
         )
 
+        result = {"messages": run.results_list}
+
         res = await agent.send_message(
-            format_judge_prompt(prompt, run.results_list, check, expected_tools)
+            format_judge_prompt(prompt, result, check, expected_tools)
         )
 
         tool_analysis = ToolAnalysis()
@@ -344,16 +346,16 @@ class Judge:
                     i,
                 )
 
-            duration = (run.modified_at - run.created_at).total_seconds()
-            return Score(
-                score=res.data,
-                model=run._task.provider["settings"]["model"] + "-" + run.name,
-                duration=duration,
-                tool_analysis=tool_analysis.tool_analysis,
-                redundant_tool_calls=tool_analysis.redundant_tool_calls,
-                tool_calls=tool_analysis.total_tool_calls,
-                trace=run.results_list,
-            )
+        duration = (run.modified_at - run.created_at).total_seconds()
+        return Score(
+            score=res.data,
+            model=run._task.provider["settings"]["model"] + "-" + run.name,
+            duration=duration,
+            tool_analysis=tool_analysis.tool_analysis,
+            redundant_tool_calls=tool_analysis.redundant_tool_calls,
+            tool_calls=tool_analysis.total_tool_calls,
+            trace=run.results_list,
+        )
 
     async def run(
         self,
