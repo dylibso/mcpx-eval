@@ -220,7 +220,7 @@ class Judge:
         tool_analysis: ToolAnalysis,
     ) -> Dict[str, Any]:
         """Evaluate a single model's performance."""
-        result = {"messages": [], "tools-available": []}
+        result = {"messages": []}
 
         try:
             model_config = ModelApiConfig.get_model_config(model)
