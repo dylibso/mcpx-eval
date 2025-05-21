@@ -248,6 +248,9 @@ class Judge:
                 # If tools is a mock object, get the return value directly
                 result["tools-available"] = chat.client.tools.keys()
 
+            if len(result["tools-available"]) == 0:
+                del result["tools-available"]
+
             async for node in chat.iter(prompt):
                 if hasattr(node, "model_response"):
                     for part in node.model_response.parts:
