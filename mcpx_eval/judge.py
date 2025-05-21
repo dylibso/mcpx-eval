@@ -60,8 +60,10 @@ class ModelApiConfig:
         return ""
 
     @staticmethod
-    def get_model_config(model: Model) -> str:
+    def get_model_config(model: Model):
         """Get the appropriate model configuration for API calls."""
+        if model.model_config is not None:
+            return model.model_config
         if model.provider in ["ollama", "llama", "openai"]:
             host = ModelApiConfig.get_host_url(model.name, model.provider)
             return openai_compatible_model(host, model.name)
